@@ -1,5 +1,6 @@
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ShuaiString extends ShuaiObject implements Serializable {
 
@@ -24,8 +25,13 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         return value.toString();
     }
 
-    public ShuaiReply get() {
+    public ShuaiReply get(String[] argv, ConcurrentHashMap<ShuaiString,ShuaiObject> dict) {
         return new ShuaiReply(ShuaiReplyStatus.OK,this);
+    }
+
+    public static ShuaiReply set(String[] argv, ConcurrentHashMap<ShuaiString,ShuaiObject> dict) {
+        dict.put(new ShuaiString(argv[1]),new ShuaiString(argv[2]));
+        return new ShuaiReply(ShuaiReplyStatus.OK, (ShuaiObject) null);
     }
 
     @Override
