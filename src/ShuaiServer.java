@@ -6,10 +6,7 @@ import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class ShuaiServer {
 
@@ -17,7 +14,7 @@ public class ShuaiServer {
 
     public static ExecutorService executor = Executors.newCachedThreadPool();
 
-    public static volatile Vector<ShuaiDB> dbs = new Vector<ShuaiDB>(){{
+    public static ConcurrentLinkedDeque<ShuaiDB> dbs = new ConcurrentLinkedDeque<ShuaiDB>(){{
         add(new ShuaiDB());
         add(new ShuaiDB());
         add(new ShuaiDB());

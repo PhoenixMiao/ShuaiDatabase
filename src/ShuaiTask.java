@@ -2,6 +2,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 
 public class ShuaiTask implements Callable<String> {
@@ -46,7 +47,15 @@ public class ShuaiTask implements Callable<String> {
         long startTime = System.currentTimeMillis();
         try {
             ShuaiReply reply = null;
-            ShuaiObject object = ShuaiServer.dbs.get(shuaiRequest.getDb()).getDict().get(new ShuaiString(shuaiRequest.getArgv()[1]));
+            Iterator<ShuaiDB> iterator = ShuaiServer.dbs.iterator();
+            int cnt = 0;
+            ShuaiObject object = null;
+            try{
+                while(cnt<shuaiRequest.getDb() && iterator.hasNext()) cnt++;
+                object = iterator.next().getDict().get(new ShuaiString(shuaiRequest.getArgv()[1]));
+            }catch (Exception e){
+                return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST);
+            }
             if(object==null) return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.KEY_NOT_FOUND);
             if(shuaiRequest.getArgc()==2) {
                 reply = (ShuaiReply) command.getProc().invoke(object);

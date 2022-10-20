@@ -1,6 +1,6 @@
 public enum ShuaiObjectType {
 
-    //字符串对象：用
+    //字符串对象
     SHUAI_STRING,
 
     //列表对象
