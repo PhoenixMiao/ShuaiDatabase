@@ -44,7 +44,7 @@ public class ShuaiTask implements Callable<String> {
         String [] argv = shuaiRequest.getArgv();
         if(!ShuaiCommand.commands.containsKey(argv[0])) return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND);
         ShuaiCommand command = ShuaiCommand.commands.get(argv[0]);
-        if(shuaiRequest.getArgc()!=command.getArity()) return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.NUMBER_OF_ARGUMENTS_FAULT);
+//        if(shuaiRequest.getArgc()!=command.getArity()) return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.NUMBER_OF_ARGUMENTS_FAULT);
         long startTime = System.currentTimeMillis();
         try {
             ShuaiReply reply = null;
