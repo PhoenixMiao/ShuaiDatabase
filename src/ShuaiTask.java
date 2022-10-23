@@ -1,38 +1,63 @@
+import jdk.management.resource.internal.inst.InitInstrumentation;
+
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ShuaiTask implements Callable<String> {
 
     private SelectionKey key;
 
+    private ShuaiRequest aofRequest;
+
     public ShuaiTask(SelectionKey key) {
         this.key = key;
     }
 
+    public ShuaiTask(ShuaiRequest aofRequest) {
+        this.aofRequest = aofRequest;
+    }
+
+    public ExecutorService executor = Executors.newFixedThreadPool(5);
+
     @Override
     public String call() throws Exception {
-        SocketChannel client = (SocketChannel) key.channel();
-        ByteBuffer output = (ByteBuffer) key.attachment();
-        output.rewind();
-        client.read(output);
-        output.rewind();
+        ShuaiRequest request;
+        if(aofRequest==null) {
+            SocketChannel client = (SocketChannel) key.channel();
+            ByteBuffer output = (ByteBuffer) key.attachment();
+            output.rewind();
+            client.read(output);
+            output.rewind();
 //        StringBuilder request = new StringBuilder();
 //        for(int a = output.get();a!=0;a = output.get()) request.append((char)a);
-        ShuaiRequest request = (ShuaiRequest) ShuaiRequest.backToObject(output.array());
-        assert key.isWritable();
-        output.rewind();
-        ShuaiReply reply = executeMethod(request);
-        output.put(reply.toBytes());
-        System.out.println(request);
-        output.rewind();
-        client.write(output);
-        output.compact();
-        key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+            request = (ShuaiRequest) ShuaiTalk.backToObject(output.array());
+            assert key.isWritable();
+            output.rewind();
+            ShuaiReply reply = executeMethod(request);
+            reply.setResponsiveRequest(request);
+            output.put(reply.toBytes());
+            System.out.println(request);
+            output.rewind();
+            client.write(output);
+            output.compact();
+            key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+        }else {
+            request = aofRequest;
+            ShuaiReply reply = executeMethod(request);
+            reply.setResponsiveRequest(request);
+            System.out.println(reply);
+        }
+
         return null;
     }
 
@@ -62,12 +87,94 @@ public class ShuaiTask implements Callable<String> {
             if(object==null && !ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isStaticOrNot())
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.KEY_NOT_FOUND);
             reply = (ShuaiReply) command.getProc().invoke(object, (Object) shuaiRequest.getArgv(),dict);
-            command.setMilliseconds(System.currentTimeMillis() - startTime);
-            command.increaseCalls();
+            if(reply.getReplyStatus()==ShuaiReplyStatus.OK) {
+                command.setMilliseconds(System.currentTimeMillis() - startTime);
+                command.increaseCalls();
+                if(ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isWillModify()){
+                    if(ShuaiServer.isRdb) executor.submit(new IncreaseDirty());
+                    if(ShuaiServer.isAof) executor.submit(new AppendOnlyFile(shuaiRequest));
+                }
+            }
             dict = null;
             return reply;
         } catch (IllegalAccessException | InvocationTargetException e) {
             return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.REFLECT_INVOKE_METHOD_FAIL);
+        }
+    }
+
+    static class IncreaseDirty implements Callable<Integer>{
+
+        @Override
+        public Integer call() {
+            ShuaiServer.lastSave.set(System.currentTimeMillis());
+            int result = ShuaiServer.dirty.incrementAndGet();
+            if(!ShuaiServer.rdbing.get()) {
+                ShuaiServer.r.lock();
+                try {
+                    for (Integer seconds : ShuaiServer.saveParams.keySet()) {
+                        //other threads can reset, so it is roughly checking
+                        if((System.currentTimeMillis() - ShuaiServer.lastSave.get()) <= seconds* 1000L &&
+                            result >= ShuaiServer.saveParams.get(seconds)) {
+                                boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
+                                if(!cas) return result;
+                                else break;
+                        }
+                    }
+                    if(!ShuaiServer.rdbing.get()) return result;
+                }finally {
+                    ShuaiServer.r.unlock();
+                }
+                File rdbFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.RDB_SUFFIX);
+                ShuaiServer.wRdbFile.lock();
+                try(
+                        FileOutputStream fileStream = new FileOutputStream(rdbFile);
+                        ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
+                ){
+                    if(rdbFile.exists()) rdbFile.delete();
+                    rdbFile.createNewFile();
+                    objectStream.writeObject(ShuaiServer.dbs);
+                } catch (Exception e) {
+                    new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.RDB_WRITE_FAIL).speakOut();
+                } finally {
+                    ShuaiServer.wRdbFile.unlock();
+                }
+                ShuaiServer.dirty.set(0);
+                result = 0;
+                if(!ShuaiServer.rdbing.compareAndSet(true,false)) {
+                    throw new RuntimeException();
+                }
+            }
+            return result;
+        }
+    }
+
+    static class AppendOnlyFile implements Runnable {
+
+        private final ShuaiRequest request;
+
+        public AppendOnlyFile(ShuaiRequest request) {
+            this.request = request;
+        }
+
+        public ShuaiRequest getRequest() {
+            return request;
+        }
+
+        @Override
+        public void run() {
+            ShuaiServer.wAofFile.lock();
+            File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
+            try(
+                    FileOutputStream fileOutputStream = new FileOutputStream(aofFile,true);
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+                    ){
+                objectOutputStream.writeObject(request);
+                fileOutputStream.write("\r\n".getBytes());
+            } catch (Exception e) {
+                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_WRITE_FAIL).speakOut();
+            } finally {
+                ShuaiServer.wAofFile.unlock();
+            }
         }
     }
 

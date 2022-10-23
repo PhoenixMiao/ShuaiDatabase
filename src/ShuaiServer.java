@@ -1,24 +1,60 @@
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ShuaiServer {
 
     public static int DEFAULT_PORT = 8888;
 
-    public static ExecutorService executor = Executors.newCachedThreadPool();
+    public static ExecutorService executor = Executors.newFixedThreadPool(100);
 
     public static ConcurrentLinkedDeque<ShuaiDB> dbs = new ConcurrentLinkedDeque<ShuaiDB>(){{
         add(new ShuaiDB());
         add(new ShuaiDB());
         add(new ShuaiDB());
     }};
+
+    static Boolean isAof = false;
+    static Boolean isRdb = true;
+
+    public static AtomicInteger dirty = new AtomicInteger(0);
+
+    public static AtomicLong lastSave = new AtomicLong(0);
+
+    public static Map<Integer,Integer> saveParams = new HashMap<Integer,Integer>(){{
+        put(900,1);
+        put(300,10);
+        put(60,10000);
+        put(100,1);
+    }};
+
+    static final ReentrantReadWriteLock saveParamsLock = new ReentrantReadWriteLock();
+
+    static final Lock r = saveParamsLock.readLock();
+    static final Lock w = saveParamsLock.writeLock();
+
+    static AtomicBoolean rdbing = new AtomicBoolean(false);
+
+    static final ReentrantReadWriteLock rdbLock = new ReentrantReadWriteLock();
+
+    static final Lock rRdbFile = rdbLock.readLock();
+    static final Lock wRdbFile = rdbLock.writeLock();
+
+    static final ReentrantReadWriteLock aofLock = new ReentrantReadWriteLock();
+
+    static final Lock rAofFile = aofLock.readLock();
+    static final Lock wAofFile = aofLock.writeLock();
 
     public static void main(String[] args) {
         System.out.println("Listening for connections on port 8888");
@@ -38,6 +74,9 @@ public class ShuaiServer {
             e.printStackTrace();
             return ;
         }
+
+        if(isAof) ShuaiServer.loadAofFile();
+        else ShuaiServer.loadRdbFile();
 
         while(true) {
             try{
@@ -83,5 +122,47 @@ public class ShuaiServer {
 
         }
 
+    }
+
+    public static void loadRdbFile() {
+        File rdbFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.RDB_SUFFIX);
+        if(!rdbFile.exists()) return;
+        ShuaiServer.rRdbFile.lock();
+        try(
+                FileInputStream fileInputStream = new FileInputStream(rdbFile);
+                ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+                ){
+            ShuaiServer.dbs = (ConcurrentLinkedDeque<ShuaiDB>) objectInputStream.readObject();
+        } catch (Exception e){
+            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.RDB_LOAD_FAIL).speakOut();
+        }finally {
+            ShuaiServer.rRdbFile.unlock();
+        }
+    }
+
+    public static void loadAofFile() {
+        File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
+        if(!aofFile.exists()) return ;
+        ShuaiServer.rAofFile.lock();
+        try(
+                FileReader fileReader = new FileReader(aofFile);
+                BufferedReader bufferedReader = new BufferedReader(fileReader);
+                ){
+            String line = bufferedReader.readLine();
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(line.getBytes());
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            //todo fix bug
+            while(line!=null) {
+                executor.submit(new ShuaiTask((ShuaiRequest) objectInputStream.readObject()));
+                line = bufferedReader.readLine();
+                byteArrayInputStream.reset();
+                if(line!=null) byteArrayInputStream.read(line.getBytes());
+            }
+        }catch (Exception e) {
+//            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_LOAD_FAIL).speakOut();
+            e.printStackTrace();
+        }finally {
+            ShuaiServer.rAofFile.unlock();
+        }
     }
 }

@@ -50,7 +50,7 @@ public class ShuaiClient {
                 ByteBuffer newRead = ByteBuffer.allocate(2000);
                 if(client.read(newRead) != -1) {
                     newRead.flip();
-                    ShuaiReply reply = (ShuaiReply) ShuaiReply.backToObject(newRead.array());
+                    ShuaiReply reply = (ShuaiReply) ShuaiTalk.backToObject(newRead.array());
                     reply.speakOut();
 //                    out.write(newRead);
 //                    System.out.println("");

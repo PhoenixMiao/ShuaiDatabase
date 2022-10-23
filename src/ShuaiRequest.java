@@ -51,9 +51,8 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
 
     @Override
     public String toString() {
-        return "ShuaiCommand{" +
-                "argc=" + argc +
-                ", argv=" + Arrays.toString(argv) +
-                '}';
+        StringBuilder res = new StringBuilder();
+        for(String argument : argv) res.append(argument);
+        return res.toString();
     }
 }

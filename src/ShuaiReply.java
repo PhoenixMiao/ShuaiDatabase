@@ -6,7 +6,9 @@ import java.nio.ByteBuffer;
 
 public class ShuaiReply extends ShuaiTalk implements Serializable{
 
-    private ShuaiReplyStatus replyStatus;
+    private ShuaiRequest responsiveRequest;
+
+    private final ShuaiReplyStatus replyStatus;
 
     private ShuaiErrorCode errorCode;
 
@@ -22,15 +24,24 @@ public class ShuaiReply extends ShuaiTalk implements Serializable{
         this.shuaiObject = shuaiObject;
     }
 
+    public void setResponsiveRequest(ShuaiRequest responsiveRequest) {
+        this.responsiveRequest = responsiveRequest;
+    }
+
     public void speakOut() {
         if(errorCode!=null) System.out.println(errorCode);
         else System.out.println(shuaiObject);
     }
 
+    public ShuaiReplyStatus getReplyStatus() {
+        return replyStatus;
+    }
+
     @Override
     public String toString() {
         return "ShuaiReply{" +
-                "replyStatus=" + replyStatus +
+                "responsiveRequest" + responsiveRequest +
+                ", replyStatus=" + replyStatus +
                 ", errorCode=" + errorCode +
                 ", shuaiObject=" + shuaiObject +
                 '}';
