@@ -92,7 +92,7 @@ public class ShuaiTask implements Callable<String> {
                 command.increaseCalls();
                 if(ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isWillModify()){
                     if(ShuaiServer.isRdb) executor.submit(new IncreaseDirty());
-                    if(ShuaiServer.isAof) executor.submit(new AppendOnlyFile(shuaiRequest));
+                    if(ShuaiServer.isAof && !shuaiRequest.isFake()) executor.submit(new AppendOnlyFile(shuaiRequest));
                 }
             }
             dict = null;
@@ -114,10 +114,10 @@ public class ShuaiTask implements Callable<String> {
                     for (Integer seconds : ShuaiServer.saveParams.keySet()) {
                         //other threads can reset, so it is roughly checking
                         if((System.currentTimeMillis() - ShuaiServer.lastSave.get()) <= seconds* 1000L &&
-                            result >= ShuaiServer.saveParams.get(seconds)) {
-                                boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
-                                if(!cas) return result;
-                                else break;
+                                result >= ShuaiServer.saveParams.get(seconds)) {
+                            boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
+                            if(!cas) return result;
+                            else break;
                         }
                     }
                     if(!ShuaiServer.rdbing.get()) return result;
@@ -165,11 +165,9 @@ public class ShuaiTask implements Callable<String> {
             ShuaiServer.wAofFile.lock();
             File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
             try(
-                    FileOutputStream fileOutputStream = new FileOutputStream(aofFile,true);
-                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                    ){
-                objectOutputStream.writeObject(request);
-                fileOutputStream.write("\r\n".getBytes());
+                    FileWriter fileWriter = new FileWriter(aofFile,true);
+            ){
+                fileWriter.append(request.toString()).append(System.getProperty("line.separator"));
             } catch (Exception e) {
                 new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_WRITE_FAIL).speakOut();
             } finally {

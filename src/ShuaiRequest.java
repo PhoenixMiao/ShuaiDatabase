@@ -13,6 +13,8 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
     //todo think of concurrent
     private int db;
 
+    private boolean fake = false;
+
     public ShuaiRequest(String input) {
         String[] tmpArgv = input.split(" ",2);
         if(tmpArgv.length==0 || !COMMAND_PREFIXES.containsKey(tmpArgv[0])) {
@@ -26,6 +28,15 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
             String[] bridge = tmpArgv[1].split(" ",this.argc - 1);
             System.arraycopy(bridge, 0, this.argv, 1,this.argc - 1);
         }
+    }
+
+    public ShuaiRequest(String input,boolean fake){
+        this(input);
+        this.fake = fake;
+    }
+
+    public boolean isFake() {
+        return fake;
     }
 
     public void setDb(int db) {
@@ -52,7 +63,7 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
     @Override
     public String toString() {
         StringBuilder res = new StringBuilder();
-        for(String argument : argv) res.append(argument);
-        return res.toString();
+        for(String argument : argv) res.append(argument).append(" ");
+        return res.toString().trim();
     }
 }

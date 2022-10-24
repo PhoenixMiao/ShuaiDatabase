@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Stream;
 
 public class ShuaiServer {
 
@@ -25,7 +26,7 @@ public class ShuaiServer {
         add(new ShuaiDB());
     }};
 
-    static Boolean isAof = false;
+    static Boolean isAof = true;
     static Boolean isRdb = true;
 
     public static AtomicInteger dirty = new AtomicInteger(0);
@@ -131,7 +132,7 @@ public class ShuaiServer {
         try(
                 FileInputStream fileInputStream = new FileInputStream(rdbFile);
                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                ){
+        ){
             ShuaiServer.dbs = (ConcurrentLinkedDeque<ShuaiDB>) objectInputStream.readObject();
         } catch (Exception e){
             new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.RDB_LOAD_FAIL).speakOut();
@@ -147,20 +148,14 @@ public class ShuaiServer {
         try(
                 FileReader fileReader = new FileReader(aofFile);
                 BufferedReader bufferedReader = new BufferedReader(fileReader);
-                ){
-            String line = bufferedReader.readLine();
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(line.getBytes());
-            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            //todo fix bug
-            while(line!=null) {
-                executor.submit(new ShuaiTask((ShuaiRequest) objectInputStream.readObject()));
-                line = bufferedReader.readLine();
-                byteArrayInputStream.reset();
-                if(line!=null) byteArrayInputStream.read(line.getBytes());
-            }
+        ){
+            bufferedReader.lines().forEach(x -> {
+                try{
+                    executor.submit(new ShuaiTask(new ShuaiRequest(x,true)));
+                }catch (RuntimeException ignored) {}
+            });
         }catch (Exception e) {
-//            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_LOAD_FAIL).speakOut();
-            e.printStackTrace();
+            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_LOAD_FAIL).speakOut();
         }finally {
             ShuaiServer.rAofFile.unlock();
         }
