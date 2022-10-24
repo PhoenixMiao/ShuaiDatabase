@@ -12,10 +12,12 @@ public enum ShuaiErrorCode {
     AOF_LOAD_FAIL(1007,"Fail to load aofFile.Please check whether your aofFile exists."),
     RDB_WRITE_FAIL(1008,"Fail to write rdbFile.Please check whether your rdbFile exists."),
     AOF_WRITE_FAIL(1009,"Fail to write aofFile.Please check whether your aofFile exists."),
+    TYPE_FORMAT_FAULT(1010, "Type can't cast"),
+    OUT_OF_RANGE_FAULT(1011, "Index is out of range");
     ;
-    
+
     private final Integer errorCode;
-    
+
     private final String errorMsg;
 
     ShuaiErrorCode(Integer errorCode, String errorMsg) {
