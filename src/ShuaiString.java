@@ -11,18 +11,13 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiString(String value) {
         this.value = new StringBuffer(value);
+        this.objectType = ShuaiObjectType.SHUAI_STRING;
     }
 
 
     public StringBuffer getValue() {
         return value;
     }
-
-
-    public ShuaiReply get(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
-        return new ShuaiReply(ShuaiReplyStatus.OK, this);
-    }
-
 
     public static ShuaiReply set(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         dict.put(new ShuaiString(argv[1]), new ShuaiString(argv[2]));

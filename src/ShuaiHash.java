@@ -6,6 +6,7 @@ public class ShuaiHash extends ShuaiObject{
 
     public ShuaiHash() {
         this.hashMap = new ConcurrentHashMap<>();
+        this.objectType = ShuaiObjectType.SHUAI_HASH;
     }
 
     public ConcurrentHashMap<ShuaiString, ShuaiString> getHashMap() {

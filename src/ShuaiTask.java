@@ -82,8 +82,11 @@ public class ShuaiTask implements Callable<String> {
             }catch (Exception e){
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST);
             }
-            if(object==null && !ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isStaticOrNot())
+            ShuaiCommand shuaiCommand = ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]);
+            if(object==null && !shuaiCommand.isStaticOrNot())
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.KEY_NOT_FOUND);
+            if(object!=null && shuaiCommand.getType()!=null && object.getObjectType() != shuaiCommand.getType())
+                return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.TYPE_FORMAT_FAULT);
             reply = (ShuaiReply) command.getProc().invoke(object, (Object) shuaiRequest.getArgv(),dict);
             if(reply.getReplyStatus()==ShuaiReplyStatus.OK) {
                 command.setMilliseconds(System.currentTimeMillis() - startTime);
