@@ -11,6 +11,15 @@ public class ShuaiCommand {
         try {
             put("GET",new ShuaiCommand("GET",ShuaiString.class.getMethod("get",String[].class,ConcurrentHashMap.class),2,0,0,false,false));
             put("SET",new ShuaiCommand("SET",ShuaiString.class.getMethod("set",String[].class,ConcurrentHashMap.class),3,0,0,true,true));
+            put("GETRANGE", new ShuaiCommand("GETRANGE", ShuaiString.class.getMethod("getRange", String[].class, ConcurrentHashMap.class), 4, 0, 0, false,false));
+            put("SETRANGE", new ShuaiCommand("SETRANGE", ShuaiString.class.getMethod("setRange", String[].class, ConcurrentHashMap.class), 4, 0, 0, true,true));
+            put("STRLEN", new ShuaiCommand("STRLEN", ShuaiString.class.getMethod("strLen", String[].class, ConcurrentHashMap.class), 2, 0, 0, false,false));
+            put("INCRBY", new ShuaiCommand("INCRBY", ShuaiString.class.getMethod("incrBy", String[].class, ConcurrentHashMap.class), 3, 0, 0, false,true));
+            put("INCRBYFLOAT", new ShuaiCommand("INCRBYFLOAT", ShuaiString.class.getMethod("incrByFloat", String[].class, ConcurrentHashMap.class), 3, 0, 0, false,true));
+            put("DECRBY", new ShuaiCommand("DECRBY", ShuaiString.class.getMethod("decrBy", String[].class, ConcurrentHashMap.class), 3, 0, 0, false,true));
+            put("DECRBYFLOAT", new ShuaiCommand("DECRBYFLOAT", ShuaiString.class.getMethod("decrByFloat", String[].class, ConcurrentHashMap.class), 3, 0, 0, false,true));
+            put("LPUSH", new ShuaiCommand("LPUSH", ShuaiList.class.getMethod("lPush", String[].class, ConcurrentHashMap.class), 3, 0, 0, true,true));
+            put("RPUSH", new ShuaiCommand("RPUSH", ShuaiList.class.getMethod("rPush", String[].class, ConcurrentHashMap.class), 3, 0, 0, true,true));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
