@@ -20,6 +20,15 @@ public class ShuaiCommand {
             put("DECRBYFLOAT", new ShuaiCommand("DECRBYFLOAT", ShuaiString.class.getMethod("decrByFloat", String[].class, ConcurrentHashMap.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
             put("LPUSH", new ShuaiCommand("LPUSH", ShuaiList.class.getMethod("lPush", String[].class, ConcurrentHashMap.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
             put("RPUSH", new ShuaiCommand("RPUSH", ShuaiList.class.getMethod("rPush", String[].class, ConcurrentHashMap.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
+            put("LRANGE", new ShuaiCommand("LRANGE", ShuaiList.class.getMethod("lRange", String[].class, ConcurrentHashMap.class), 4, false, false,ShuaiObjectType.SHUAI_LIST));
+            put("LPOP", new ShuaiCommand("LPOP", ShuaiList.class.getMethod("lPop", String[].class, ConcurrentHashMap.class), 2, false, true,ShuaiObjectType.SHUAI_LIST));
+            put("RPOP", new ShuaiCommand("RPOP", ShuaiList.class.getMethod("rPop", String[].class, ConcurrentHashMap.class), 2,  false, true,ShuaiObjectType.SHUAI_LIST));
+            put("LLEN", new ShuaiCommand("LLEN", ShuaiList.class.getMethod("lLen", String[].class, ConcurrentHashMap.class), 2,  false, false,ShuaiObjectType.SHUAI_LIST));
+            put("LINDEX", new ShuaiCommand("LINDEX", ShuaiList.class.getMethod("lIndex", String[].class, ConcurrentHashMap.class), 3,  false, false, ShuaiObjectType.SHUAI_LIST));
+            put("LINSERT", new ShuaiCommand("LINSERT", ShuaiList.class.getMethod("lInsert", String[].class, ConcurrentHashMap.class), 5,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LREM", new ShuaiCommand("LREM", ShuaiList.class.getMethod("lRem", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LTRIM", new ShuaiCommand("LTRIM", ShuaiList.class.getMethod("lTrim", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LSET", new ShuaiCommand("LSET", ShuaiList.class.getMethod("lSet", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
