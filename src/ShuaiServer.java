@@ -31,13 +31,13 @@ public class ShuaiServer {
 
     public static AtomicInteger dirty = new AtomicInteger(0);
 
-    public static AtomicLong lastSave = new AtomicLong(0);
+    public static AtomicLong lastSave = new AtomicLong(System.currentTimeMillis());
 
     public static Map<Integer,Integer> saveParams = new HashMap<Integer,Integer>(){{
-        put(900,1);
-        put(300,10);
+        put(900,100);
+        put(300,1000);
         put(60,10000);
-        put(100,1);
+        put(10,5);
     }};
 
     static final ReentrantReadWriteLock saveParamsLock = new ReentrantReadWriteLock();
@@ -76,8 +76,8 @@ public class ShuaiServer {
             return ;
         }
 
+        if(isRdb) ShuaiServer.loadRdbFile();
         if(isAof) ShuaiServer.loadAofFile();
-        else ShuaiServer.loadRdbFile();
 
         while(true) {
             try{

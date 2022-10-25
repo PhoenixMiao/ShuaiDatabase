@@ -37,7 +37,7 @@ public class ShuaiList extends ShuaiObject{
     }
 
     public static ShuaiReply rPush(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
-        ShuaiList shuaiList;
+        ShuaiList shuaiList;  
         if (dict.containsKey(new ShuaiString(argv[1]))) shuaiList = (ShuaiList) dict.get(new ShuaiString(argv[1]));
         else shuaiList = new ShuaiList();
         List<ShuaiObject> newValueList = new ArrayList<>();
