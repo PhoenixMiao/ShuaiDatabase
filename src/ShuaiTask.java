@@ -107,14 +107,16 @@ public class ShuaiTask implements Callable<String> {
 
         @Override
         public Integer call() {
-            ShuaiServer.lastSave.set(System.currentTimeMillis());
             int result = ShuaiServer.dirty.incrementAndGet();
+            long lastSave = ShuaiServer.lastSave.get();
+            long curTime = System.currentTimeMillis();
+            ShuaiServer.lastSave.set(curTime);
             if(!ShuaiServer.rdbing.get()) {
                 ShuaiServer.r.lock();
                 try {
                     for (Integer seconds : ShuaiServer.saveParams.keySet()) {
                         //other threads can reset, so it is roughly checking
-                        if((System.currentTimeMillis() - ShuaiServer.lastSave.get()) <= seconds* 1000L &&
+                        if((curTime - lastSave) <= seconds* 1000L &&
                                 result >= ShuaiServer.saveParams.get(seconds)) {
                             boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
                             if(!cas) return result;
@@ -141,6 +143,18 @@ public class ShuaiTask implements Callable<String> {
                 }
                 ShuaiServer.dirty.set(0);
                 result = 0;
+                if(ShuaiServer.isAof) {
+                    ShuaiServer.wAofFile.lock();
+                    try(
+                            FileWriter fileWriter = new FileWriter(new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX));
+                    ){
+                        fileWriter.append("");
+                    } catch (Exception e) {
+                        new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_WRITE_FAIL).speakOut();
+                    }finally {
+                        ShuaiServer.wAofFile.unlock();
+                    }
+                }
                 if(!ShuaiServer.rdbing.compareAndSet(true,false)) {
                     throw new RuntimeException();
                 }
