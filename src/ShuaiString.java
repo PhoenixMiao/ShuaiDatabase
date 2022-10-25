@@ -69,7 +69,6 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiReply incrByFloat(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         try {
-            String key = argv[1];
             double incr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
             doubleValue += incr;
@@ -83,7 +82,6 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiReply decrByFloat(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         try {
-            String key = argv[1];
             double decr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
             doubleValue -= decr;
@@ -97,7 +95,6 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiReply incrBy(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         try {
-            String key = argv[1];
             long incr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
             longValue += incr;
@@ -111,7 +108,6 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiReply decrBy(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         try {
-            String key = argv[1];
             long decr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
             longValue -= decr;
@@ -125,7 +121,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public ShuaiReply strLen(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
         String res = value.length() + "";
-        return new ShuaiReply(ShuaiReplyStatus.OK, (ShuaiObject) new ShuaiString(res));
+        return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res));
     }
 
 

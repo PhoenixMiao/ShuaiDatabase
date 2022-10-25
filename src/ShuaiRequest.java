@@ -77,17 +77,26 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
     }
 
     public static final HashMap<String, Integer> COMMAND_PREFIXES  = new HashMap<String, Integer>(){{
-        put("GET",2);
-        put("SET",3);
-        put("GETRANGE",4);
-        put("SETRANGE",4);
-        put("STRLEN",2);
-        put("INCRBY",3);
-        put("INCRBYFLOAT",3);
-        put("DECRBY",3);
-        put("DECRBYFLOAT",3);
-        put("LPUSH",3);
-        put("RPUSH",3);
+        put("GET", 2);
+        put("SET", 3);
+        put("GETRANGE", 4);
+        put("SETRANGE", 4);
+        put("STRLEN", 2);
+        put("INCRBY", 3);
+        put("INCRBYFLOAT", 3);
+        put("DECRBY", 3);
+        put("DECRBYFLOAT", 3);
+        put("LPUSH", 3);
+        put("RPUSH", 3);
+        put("LRANGE", 4);
+        put("LPOP", 2);
+        put("RPOP", 2);
+        put("LLEN", 2);
+        put("LINDEX", 3);
+        put("LINSERT", 5);
+        put("LREM", 4);
+        put("LTRIM", 4);
+        put("LSET", 4);
     }};
 
     @Override
