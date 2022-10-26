@@ -8,4 +8,6 @@ public class ShuaiConstants {
     public static final String RDB_SUFFIX = "rdb.txt";
     public static final String AOF_SUFFIX = "aof.txt";
     public static final String NEW_AOF_SUFFIX = "aof1.txt";
+    public static final String LSM_SUFFIX = "lsm\\chunk";
+    public static final long MAX_MEMORY = 104071168L;
 }

@@ -14,7 +14,11 @@ public enum ShuaiErrorCode {
     AOF_WRITE_FAIL(1009, "Fail to write aofFile.Please check whether your aofFile exists."),
     TYPE_FORMAT_FAULT(1010, "Type of argument is wrong"),
     OUT_OF_RANGE_FAULT(1011, "Index is out of range"),
-    ARGUMENT_WRONG(1012,"Input wrong argument")
+    ARGUMENT_WRONG(1012,"Input wrong argument"),
+    EXPIRE_TIME_INPUT_FAULT(1013,"Expire time has to be a positive integer"),
+    EXPIRE_THREAD_INTERRUPTED(1014,"Thread responsible for expire delete is interrupted."),
+    MEMORY_RAN_OUT_AND_NOEVICTION(1015,"There is no memory for new entry."),
+    LSM_WRITE_FAIL(1016, "Fail to write lsmFile."),
     ;
 
     private final Integer errorCode;
