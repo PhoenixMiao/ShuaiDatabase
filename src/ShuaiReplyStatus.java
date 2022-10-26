@@ -4,6 +4,7 @@ public enum ShuaiReplyStatus {
 
     INPUT_FAULT,
 
-    INNER_FAULT;
+    INNER_FAULT,
 
+    OUT_OF_MEMORY;
 }

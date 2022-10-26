@@ -9,26 +9,29 @@ public class ShuaiCommand {
 
     public static final ConcurrentHashMap<String,ShuaiCommand> commands = new ConcurrentHashMap<String,ShuaiCommand>(){{
         try {
-            put("GET",new ShuaiCommand("GET",ShuaiString.class.getMethod("get",String[].class,ConcurrentHashMap.class),2,false,false,null));
-            put("SET",new ShuaiCommand("SET",ShuaiString.class.getMethod("set",String[].class,ConcurrentHashMap.class),3,true,true,ShuaiObjectType.SHUAI_STRING));
-            put("GETRANGE", new ShuaiCommand("GETRANGE", ShuaiString.class.getMethod("getRange", String[].class, ConcurrentHashMap.class), 4, false,false,ShuaiObjectType.SHUAI_STRING));
-            put("SETRANGE", new ShuaiCommand("SETRANGE", ShuaiString.class.getMethod("setRange", String[].class, ConcurrentHashMap.class), 4, true,true,ShuaiObjectType.SHUAI_STRING));
-            put("STRLEN", new ShuaiCommand("STRLEN", ShuaiString.class.getMethod("strLen", String[].class, ConcurrentHashMap.class), 2, false,false,ShuaiObjectType.SHUAI_STRING));
-            put("INCRBY", new ShuaiCommand("INCRBY", ShuaiString.class.getMethod("incrBy", String[].class, ConcurrentHashMap.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
-            put("INCRBYFLOAT", new ShuaiCommand("INCRBYFLOAT", ShuaiString.class.getMethod("incrByFloat", String[].class, ConcurrentHashMap.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
-            put("DECRBY", new ShuaiCommand("DECRBY", ShuaiString.class.getMethod("decrBy", String[].class, ConcurrentHashMap.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
-            put("DECRBYFLOAT", new ShuaiCommand("DECRBYFLOAT", ShuaiString.class.getMethod("decrByFloat", String[].class, ConcurrentHashMap.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
-            put("LPUSH", new ShuaiCommand("LPUSH", ShuaiList.class.getMethod("lPush", String[].class, ConcurrentHashMap.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
-            put("RPUSH", new ShuaiCommand("RPUSH", ShuaiList.class.getMethod("rPush", String[].class, ConcurrentHashMap.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
-            put("LRANGE", new ShuaiCommand("LRANGE", ShuaiList.class.getMethod("lRange", String[].class, ConcurrentHashMap.class), 4, false, false,ShuaiObjectType.SHUAI_LIST));
-            put("LPOP", new ShuaiCommand("LPOP", ShuaiList.class.getMethod("lPop", String[].class, ConcurrentHashMap.class), 2, false, true,ShuaiObjectType.SHUAI_LIST));
-            put("RPOP", new ShuaiCommand("RPOP", ShuaiList.class.getMethod("rPop", String[].class, ConcurrentHashMap.class), 2,  false, true,ShuaiObjectType.SHUAI_LIST));
-            put("LLEN", new ShuaiCommand("LLEN", ShuaiList.class.getMethod("lLen", String[].class, ConcurrentHashMap.class), 2,  false, false,ShuaiObjectType.SHUAI_LIST));
-            put("LINDEX", new ShuaiCommand("LINDEX", ShuaiList.class.getMethod("lIndex", String[].class, ConcurrentHashMap.class), 3,  false, false, ShuaiObjectType.SHUAI_LIST));
-            put("LINSERT", new ShuaiCommand("LINSERT", ShuaiList.class.getMethod("lInsert", String[].class, ConcurrentHashMap.class), 5,  false, true, ShuaiObjectType.SHUAI_LIST));
-            put("LREM", new ShuaiCommand("LREM", ShuaiList.class.getMethod("lRem", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
-            put("LTRIM", new ShuaiCommand("LTRIM", ShuaiList.class.getMethod("lTrim", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
-            put("LSET", new ShuaiCommand("LSET", ShuaiList.class.getMethod("lSet", String[].class, ConcurrentHashMap.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("GET",new ShuaiCommand("GET",ShuaiObject.class.getMethod("get",String[].class,ShuaiDB.class),2,false,false,null));
+            put("SET",new ShuaiCommand("SET",ShuaiString.class.getMethod("set",String[].class,ShuaiDB.class),3,true,true,ShuaiObjectType.SHUAI_STRING));
+            put("GETRANGE", new ShuaiCommand("GETRANGE", ShuaiString.class.getMethod("getRange", String[].class, ShuaiDB.class), 4, false,false,ShuaiObjectType.SHUAI_STRING));
+            put("SETRANGE", new ShuaiCommand("SETRANGE", ShuaiString.class.getMethod("setRange", String[].class, ShuaiDB.class), 4, true,true,ShuaiObjectType.SHUAI_STRING));
+            put("STRLEN", new ShuaiCommand("STRLEN", ShuaiString.class.getMethod("strLen", String[].class, ShuaiDB.class), 2, false,false,ShuaiObjectType.SHUAI_STRING));
+            put("INCRBY", new ShuaiCommand("INCRBY", ShuaiString.class.getMethod("incrBy", String[].class, ShuaiDB.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
+            put("INCRBYFLOAT", new ShuaiCommand("INCRBYFLOAT", ShuaiString.class.getMethod("incrByFloat", String[].class, ShuaiDB.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
+            put("DECRBY", new ShuaiCommand("DECRBY", ShuaiString.class.getMethod("decrBy", String[].class, ShuaiDB.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
+            put("DECRBYFLOAT", new ShuaiCommand("DECRBYFLOAT", ShuaiString.class.getMethod("decrByFloat", String[].class, ShuaiDB.class), 3, false,true,ShuaiObjectType.SHUAI_STRING));
+            put("LPUSH", new ShuaiCommand("LPUSH", ShuaiList.class.getMethod("lPush", String[].class, ShuaiDB.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
+            put("RPUSH", new ShuaiCommand("RPUSH", ShuaiList.class.getMethod("rPush", String[].class, ShuaiDB.class), 3, true,true,ShuaiObjectType.SHUAI_LIST));
+            put("LRANGE", new ShuaiCommand("LRANGE", ShuaiList.class.getMethod("lRange", String[].class, ShuaiDB.class), 4, false, false,ShuaiObjectType.SHUAI_LIST));
+            put("LPOP", new ShuaiCommand("LPOP", ShuaiList.class.getMethod("lPop", String[].class, ShuaiDB.class), 2, false, true,ShuaiObjectType.SHUAI_LIST));
+            put("RPOP", new ShuaiCommand("RPOP", ShuaiList.class.getMethod("rPop", String[].class, ShuaiDB.class), 2,  false, true,ShuaiObjectType.SHUAI_LIST));
+            put("LLEN", new ShuaiCommand("LLEN", ShuaiList.class.getMethod("lLen", String[].class, ShuaiDB.class), 2,  false, false,ShuaiObjectType.SHUAI_LIST));
+            put("LINDEX", new ShuaiCommand("LINDEX", ShuaiList.class.getMethod("lIndex", String[].class, ShuaiDB.class), 3,  false, false, ShuaiObjectType.SHUAI_LIST));
+            put("LINSERT", new ShuaiCommand("LINSERT", ShuaiList.class.getMethod("lInsert", String[].class, ShuaiDB.class), 5,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LREM", new ShuaiCommand("LREM", ShuaiList.class.getMethod("lRem", String[].class, ShuaiDB.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LTRIM", new ShuaiCommand("LTRIM", ShuaiList.class.getMethod("lTrim", String[].class, ShuaiDB.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("LSET", new ShuaiCommand("LSET", ShuaiList.class.getMethod("lSet", String[].class, ShuaiDB.class), 4,  false, true, ShuaiObjectType.SHUAI_LIST));
+            put("EXPIRE", new ShuaiCommand("EXPIRE", ShuaiObject.class.getMethod("expire", String[].class, ShuaiDB.class), 3,  false, true, null));
+            put("PEXPIRE", new ShuaiCommand("PEXPIRE", ShuaiObject.class.getMethod("pExpire", String[].class, ShuaiDB.class), 3,  false, true, null));
+            put("DEL",new ShuaiCommand("DEL",ShuaiObject.class.getMethod("delete", String[].class, ShuaiDB.class),2,true,true,null));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }

@@ -16,13 +16,13 @@ public class ShuaiList extends ShuaiObject {
         return list;
     }
 
-    public static ShuaiReply lPush(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public static ShuaiReply lPush(String[] argv, ShuaiDB db) {
         ShuaiList shuaiList;
         try {
-            if (dict.containsKey(new ShuaiString(argv[1]))) shuaiList = (ShuaiList) dict.get(new ShuaiString(argv[1]));
+            if (db.getDict().containsKey(new ShuaiString(argv[1]))) shuaiList = (ShuaiList) db.getDict().get(new ShuaiString(argv[1]));
             else {
                 shuaiList = new ShuaiList();
-                dict.put(new ShuaiString(argv[1]), shuaiList);
+                db.getDict().put(new ShuaiString(argv[1]), shuaiList);
             }
             List<ShuaiObject> newValueList = new ArrayList<>();
             String[] newValue = argv[2].split(" ");
@@ -36,13 +36,13 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public static ShuaiReply rPush(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public static ShuaiReply rPush(String[] argv, ShuaiDB db) {
         ShuaiList shuaiList;  
         try {
-            if (dict.containsKey(new ShuaiString(argv[1]))) shuaiList = (ShuaiList) dict.get(new ShuaiString(argv[1]));
+            if (db.getDict().containsKey(new ShuaiString(argv[1]))) shuaiList = (ShuaiList) db.getDict().get(new ShuaiString(argv[1]));
             else {
                 shuaiList = new ShuaiList();
-                dict.put(new ShuaiString(argv[1]), shuaiList);
+                db.getDict().put(new ShuaiString(argv[1]), shuaiList);
             }
             List<ShuaiObject> newValueList = new ArrayList<>();
             String[] newValue = argv[2].split(" ");
@@ -56,7 +56,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lRange(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lRange(String[] argv, ShuaiDB db) {
         try {
             int begin = Integer.parseInt(argv[2]);
             int end = Integer.parseInt(argv[3]);
@@ -84,11 +84,11 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lLen(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lLen(String[] argv, ShuaiDB db) {
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(this.list.size() + ""));
     }
 
-    public ShuaiReply lPop(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lPop(String[] argv, ShuaiDB db) {
         try {
             list.remove(0);
             return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(list.size() + ""));
@@ -99,7 +99,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply rPop(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply rPop(String[] argv, ShuaiDB db) {
         try {
             list.remove(list.size() - 1);
             return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(list.size() + ""));
@@ -110,7 +110,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lIndex(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lIndex(String[] argv, ShuaiDB db) {
         try {
             int index = Integer.parseInt(argv[2]);
             ShuaiString res = (ShuaiString) this.list.get(index);
@@ -122,7 +122,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lInsert(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lInsert(String[] argv, ShuaiDB db) {
         try {
             String position = argv[2];
             ShuaiString pivot = new ShuaiString(argv[3]);
@@ -143,7 +143,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lRem(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lRem(String[] argv, ShuaiDB db) {
         try {
             int count = Integer.parseInt(argv[2]);
             ShuaiString value = new ShuaiString(argv[3]);
@@ -173,7 +173,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lTrim(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lTrim(String[] argv, ShuaiDB db) {
         try {
             int begin = Integer.parseInt(argv[2]);
             int end = Integer.parseInt(argv[3]);
@@ -197,7 +197,7 @@ public class ShuaiList extends ShuaiObject {
         }
     }
 
-    public ShuaiReply lSet(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply lSet(String[] argv, ShuaiDB db) {
         try {
             int index = Integer.parseInt(argv[2]);
             ShuaiString value = new ShuaiString(argv[3]);

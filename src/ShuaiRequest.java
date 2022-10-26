@@ -44,6 +44,10 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
                 }
             }
             String[] bridge = builder.toString().split(" ",this.argc - 1);
+            if(bridge.length != this.argc-1) {
+                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.ARGUMENT_WRONG).speakOut();
+                throw new RuntimeException();
+            }
             if(flag) for(int i = 0;i<bridge.length;i++) {
                 bridge[i] = bridge[i].replace('\n',' ');
             }
@@ -97,6 +101,9 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("LREM", 4);
         put("LTRIM", 4);
         put("LSET", 4);
+        put("EXPIRE", 3);
+        put("PEXPIRE", 3);
+        put("DEL",2);
     }};
 
     @Override

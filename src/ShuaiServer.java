@@ -1,24 +1,28 @@
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Stream;
 
 public class ShuaiServer {
 
     public static int DEFAULT_PORT = 8888;
 
     public static ExecutorService executor = Executors.newFixedThreadPool(100);
+
+    public static ExecutorService aofExecutor = Executors.newSingleThreadExecutor();
+
+    public static ScheduledExecutorService serverCronExecutor = Executors.newScheduledThreadPool(5);
+
+    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_LRU;
+
+    public static volatile boolean reachLimitation = false;
 
     public static ConcurrentLinkedDeque<ShuaiDB> dbs = new ConcurrentLinkedDeque<ShuaiDB>(){{
         add(new ShuaiDB());
@@ -28,16 +32,15 @@ public class ShuaiServer {
 
     static Boolean isAof = true;
     static Boolean isRdb = true;
-
-    public static AtomicInteger dirty = new AtomicInteger(0);
+    static Boolean isLsm = true;
 
     public static AtomicLong lastSave = new AtomicLong(System.currentTimeMillis());
 
-    public static Map<Integer,Integer> saveParams = new HashMap<Integer,Integer>(){{
-        put(900,100);
-        put(300,1000);
-        put(60,10000);
-        put(10,5);
+    public static List<List<Integer>> saveParams = new LinkedList<List<Integer>>(){{
+        add(new ArrayList<>(Arrays.asList(900,100,0)));
+        add(new ArrayList<>(Arrays.asList(300,1000,0)));
+        add(new ArrayList<>(Arrays.asList(60,10000,0)));
+        add(new ArrayList<>(Arrays.asList(10,5,0)));
     }};
 
     static final ReentrantReadWriteLock saveParamsLock = new ReentrantReadWriteLock();
@@ -56,6 +59,8 @@ public class ShuaiServer {
 
     static final Lock rAofFile = aofLock.readLock();
     static final Lock wAofFile = aofLock.writeLock();
+
+    static volatile AtomicLong availableMemory = new AtomicLong(1024*1024);
 
     public static void main(String[] args) {
         System.out.println("Listening for connections on port 8888");
@@ -78,6 +83,23 @@ public class ShuaiServer {
 
         if(isRdb) ShuaiServer.loadRdbFile();
         if(isAof) ShuaiServer.loadAofFile();
+
+        Iterator<ShuaiDB> it = ShuaiServer.dbs.iterator();
+        ShuaiDB db;
+        try{
+            for(int i = 0;i<ShuaiServer.dbs.size();i++) {
+                db = it.next();
+                RollExpires rollExpires = new RollExpires(db);
+                Thread thread = new Thread(rollExpires);
+                thread.setDaemon(true);
+                thread.start();
+                if(!it.hasNext()) break;
+            }
+        }catch (Exception e){
+            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST).speakOut();
+        }
+
+        serverCronExecutor.scheduleWithFixedDelay(new ServerCron(),1000,1000,TimeUnit.MILLISECONDS);
 
         while(true) {
             try{
@@ -134,7 +156,9 @@ public class ShuaiServer {
                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
         ){
             ShuaiServer.dbs = (ConcurrentLinkedDeque<ShuaiDB>) objectInputStream.readObject();
+            dbs.forEach(ShuaiDB::initExpires);
         } catch (Exception e){
+            e.printStackTrace();
             new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.RDB_LOAD_FAIL).speakOut();
         }finally {
             ShuaiServer.rRdbFile.unlock();
@@ -151,7 +175,7 @@ public class ShuaiServer {
         ){
             bufferedReader.lines().forEach(x -> {
                 try{
-                    executor.submit(new ShuaiTask(new ShuaiRequest(x,true)));
+                    aofExecutor.submit(new ShuaiTask(new ShuaiRequest(x,true)));
                 }catch (RuntimeException ignored) {}
             });
         }catch (Exception e) {
@@ -160,4 +184,82 @@ public class ShuaiServer {
             ShuaiServer.rAofFile.unlock();
         }
     }
+
+    static class ServerCron implements Runnable {
+
+        @Override
+        public void run() {
+            //eliminate
+            ShuaiServer.availableMemory.addAndGet(-(Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory()));
+            if(ShuaiServer.availableMemory.get() < 1024*1024) {
+                reachLimitation = true;
+                switch (eliminateStrategy) {
+                    case ALLKEYS_LRU:
+                        allKeysLRU();
+                        break;
+                    case VOLATILE_LRU:
+                    case ALLKEYS_RANDOM:
+                    case VOLATILE_RANDOM:
+                    default:
+                }
+            }
+
+            //expire
+            for(ShuaiDB db : dbs) {
+                db.getExLock().lock();
+                try{
+                    db.getCondition().signalAll();
+                }finally {
+                    db.getExLock().unlock();
+                }
+            }
+
+            //produce rdb file
+            new ShuaiTask.RdbProduce(true).call();
+        }
+
+        private void allKeysLRU() {
+            for(ShuaiDB db : dbs) {
+                AtomicReference<ShuaiString> min = new AtomicReference<>();
+                AtomicLong mint = new AtomicLong(System.currentTimeMillis());
+                db.getLru().forEach((k,v) -> {
+                    if(v < mint.get()) {
+                        mint.set(v);
+                        min.set(k);
+                    }
+                });
+                db.getDict().remove(min.get());
+//                db.getExpires().remove(min.get());
+            }
+        }
+    }
+
+    static class RollExpires implements Runnable {
+
+        private final ShuaiDB db;
+
+        public RollExpires(ShuaiDB db) {
+            this.db = db;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                db.getExLock().lock();
+                try {
+                    DelayQueue<ShuaiObject> delayQueue = db.getExpires();
+                    ShuaiObject key = null;
+                    while (delayQueue.isEmpty() || (key = delayQueue.poll()) == null) db.getCondition().await();
+                    db.getDict().remove(key);
+                    executor.submit(new ShuaiTask.AppendOnlyFile(new ShuaiRequest("DEL " + ((ShuaiString)key).toString())));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.EXPIRE_THREAD_INTERRUPTED).speakOut();
+                } finally {
+                    db.getExLock().unlock();
+                }
+            }
+        }
+    }
+
 }

@@ -19,12 +19,12 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         return value;
     }
 
-    public static ShuaiReply set(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
-        dict.put(new ShuaiString(argv[1]), new ShuaiString(argv[2]));
+    public static ShuaiReply set(String[] argv, ShuaiDB db) {
+        db.getDict().put(new ShuaiString(argv[1]), new ShuaiString(argv[2]));
         return new ShuaiReply(ShuaiReplyStatus.OK, (ShuaiObject) null);
     }
 
-    public ShuaiReply getRange(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply getRange(String[] argv, ShuaiDB db) {
         try {
             int begin = Integer.parseInt(argv[2]);
             int end = Integer.parseInt(argv[3]);
@@ -41,13 +41,13 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         }
     }
 
-    public static ShuaiReply setRange(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public static ShuaiReply setRange(String[] argv, ShuaiDB db) {
         try {
             String key = argv[1];
             int offset = Integer.parseInt(argv[2]);
             String newValue = argv[3];
             ShuaiString oldValue = new ShuaiString("");
-            if (dict.containsKey(new ShuaiString(key))) oldValue = (ShuaiString) dict.get(new ShuaiString(key));
+            if (db.getDict().containsKey(new ShuaiString(key))) oldValue = (ShuaiString) db.getDict().get(new ShuaiString(key));
             oldValue.value.setLength(offset);
             oldValue.value.append(newValue);
             ShuaiString res = new ShuaiString(oldValue.value.length() + "");
@@ -59,15 +59,15 @@ public class ShuaiString extends ShuaiObject implements Serializable {
     }
 
 
-    public ShuaiReply append(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply append(String[] argv, ShuaiDB db) {
         String newValue = value.append(argv[2]).toString();
-        dict.put(this, new ShuaiString(newValue));
+        db.getDict().put(this, new ShuaiString(newValue));
         String res = newValue.length() + "";
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res));
     }
 
 
-    public ShuaiReply incrByFloat(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply incrByFloat(String[] argv, ShuaiDB db) {
         try {
             double incr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
@@ -80,7 +80,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
     }
 
 
-    public ShuaiReply decrByFloat(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply decrByFloat(String[] argv, ShuaiDB db) {
         try {
             double decr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
@@ -93,7 +93,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
     }
 
 
-    public ShuaiReply incrBy(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply incrBy(String[] argv, ShuaiDB db) {
         try {
             long incr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
@@ -106,7 +106,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
     }
 
 
-    public ShuaiReply decrBy(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply decrBy(String[] argv, ShuaiDB db) {
         try {
             long decr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
@@ -119,7 +119,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
     }
 
 
-    public ShuaiReply strLen(String[] argv, ConcurrentHashMap<ShuaiString, ShuaiObject> dict) {
+    public ShuaiReply strLen(String[] argv, ShuaiDB db) {
         String res = value.length() + "";
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res));
     }

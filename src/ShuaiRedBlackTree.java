@@ -5,7 +5,7 @@ public class ShuaiRedBlackTree {
 
     public ShuaiRedBlackTree(Node root) {
         this.root = root;
-        this.nil = new Node(new ShuaiString("nil"),new ShuaiString("nil"),null,root,root,ShuaiColor.BLACK);
+        this.nil = new Node(new ShuaiString("nil"),new ShuaiString("nil"),null,root,root,ShuaiColor.BLACK,false);
     }
 
     static class Node {
@@ -15,14 +15,24 @@ public class ShuaiRedBlackTree {
         private Node left;
         private Node right;
         private ShuaiColor color;
+        private boolean deleted;
 
-        public Node(ShuaiString key, ShuaiString value, Node p, Node left, Node right,ShuaiColor color) {
+        public Node(ShuaiString key, ShuaiString value, Node p, Node left, Node right,ShuaiColor color,boolean deleted) {
             this.key = key;
             this.value = value;
             this.p = p;
             this.left = left;
             this.right = right;
             this.color = color;
+            this.deleted = deleted;
+        }
+
+        public boolean isDeleted() {
+            return deleted;
+        }
+
+        public void setDeleted(boolean deleted) {
+            this.deleted = deleted;
         }
 
         public ShuaiString getKey() {
