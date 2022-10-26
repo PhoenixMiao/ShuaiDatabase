@@ -1,25 +1,28 @@
 public class ShuaiRedBlackTree {
     
     private Node root;
-    private Node nil;
+    private final Node nil;
 
-    public ShuaiRedBlackTree(Node root) {
-        this.root = root;
-        this.nil = new Node(new ShuaiString("nil"),new ShuaiString("nil"),null,root,root,ShuaiColor.BLACK,false);
+    public ShuaiRedBlackTree() {
+        this.nil = new Node(new ShuaiEntry(new ShuaiString("nil"),new ShuaiString("nil")),null,root,root,ShuaiColor.BLACK,false);
+        this.root = this.nil;
     }
 
     static class Node {
-        private ShuaiString key;
-        private ShuaiObject value;
+        private ShuaiEntry entry;
         private Node p;
         private Node left;
         private Node right;
         private ShuaiColor color;
         private boolean deleted;
 
-        public Node(ShuaiString key, ShuaiString value, Node p, Node left, Node right,ShuaiColor color,boolean deleted) {
-            this.key = key;
-            this.value = value;
+        public Node(ShuaiEntry entry, boolean deleted) {
+            this.entry = entry;
+            this.deleted = deleted;
+        }
+
+        public Node(ShuaiEntry entry, Node p, Node left, Node right, ShuaiColor color, boolean deleted) {
+            this.entry = entry;
             this.p = p;
             this.left = left;
             this.right = right;
@@ -35,20 +38,12 @@ public class ShuaiRedBlackTree {
             this.deleted = deleted;
         }
 
-        public ShuaiString getKey() {
-            return key;
+        public ShuaiEntry getEntry() {
+            return entry;
         }
 
-        public void setKey(ShuaiString key) {
-            this.key = key;
-        }
-
-        public ShuaiObject getValue() {
-            return value;
-        }
-
-        public void setValue(ShuaiObject value) {
-            this.value = value;
+        public void setEntry(ShuaiEntry entry) {
+            this.entry = entry;
         }
 
         public Node getP() {
@@ -88,7 +83,7 @@ public class ShuaiRedBlackTree {
         RED,
         BLACK;
     }
-    
+
     private synchronized void leftRotate(Node x) {
         Node y = x.right;
         x.right = y.left;
@@ -118,12 +113,12 @@ public class ShuaiRedBlackTree {
         Node x = root;
         while(x != nil) {
             y = x;
-            if(z.key.compareTo(x.key)<0) x = x.left;
+            if(z.entry.compareTo(x.entry)<0) x = x.left;
             else x = x.right;
         }
         z.p = y;
         if(y==nil) root = z;
-        else if(z.key.compareTo(y.key)<0) y.left = z;
+        else if(z.entry.compareTo(y.entry)<0) y.left = z;
         else y.right = z;
         z.left = nil;
         z.right = nil;
@@ -177,8 +172,18 @@ public class ShuaiRedBlackTree {
         while(x.left != nil) x = x.left;
         return x;
     }
+
+    public synchronized int getHeight() {
+        Node x = root;
+        int height = 1;
+        while(x.left != nil) {
+            x = x.left;
+            if(x.color == ShuaiColor.BLACK) height ++;
+        }
+        return height;
+    }
     
-    public synchronized void rbDelete(Node z) {
+    private synchronized void rbDelete(Node z) {
         Node y = z;
         ShuaiColor yOriginalColor = y.color;
         Node x;
@@ -255,6 +260,12 @@ public class ShuaiRedBlackTree {
             }
         }
         x.color = ShuaiColor.BLACK;
+    }
+
+    public synchronized Node deleteRoot() {
+        Node root = this.root;
+        rbDelete(root);
+        return root;
     }
     
 }

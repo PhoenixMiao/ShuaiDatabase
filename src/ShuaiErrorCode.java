@@ -18,6 +18,7 @@ public enum ShuaiErrorCode {
     EXPIRE_TIME_INPUT_FAULT(1013,"Expire time has to be a positive integer"),
     EXPIRE_THREAD_INTERRUPTED(1014,"Thread responsible for expire delete is interrupted."),
     MEMORY_RAN_OUT_AND_NOEVICTION(1015,"There is no memory for new entry."),
+    LSM_WRITE_FAIL(1016, "Fail to write lsmFile."),
     ;
 
     private final Integer errorCode;

@@ -10,5 +10,7 @@ public enum ShuaiEliminateStrategy {
 
     VOLATILE_RANDOM,
 
-    VOLATILE_TTL;
+    VOLATILE_TTL,
+
+    LSM_TREE;
 }

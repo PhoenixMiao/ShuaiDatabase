@@ -37,10 +37,10 @@ public class ShuaiObject implements Serializable, Delayed {
         }catch (Exception e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.EXPIRE_TIME_INPUT_FAULT);
         }
-        ShuaiObject object = new ShuaiString(argv[1]);
+        ShuaiString object = new ShuaiString(argv[1]);
         object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000000);
-        db.getExpires().remove(object);
-        db.getExpires().put(object);
+        db.getExpires().remove(new ShuaiExpireKey(object));
+        db.getExpires().put(new ShuaiExpireKey(object));
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(argv[2]));
     }
 
@@ -51,9 +51,9 @@ public class ShuaiObject implements Serializable, Delayed {
         }catch (Exception e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.EXPIRE_TIME_INPUT_FAULT);
         }
-        ShuaiObject object = new ShuaiString(argv[1]);
+        ShuaiString object = new ShuaiString(argv[1]);
         object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000);
-        db.getExpires().put(object);
+        db.getExpires().put(new ShuaiExpireKey(object));
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(argv[2]));
     }
 
