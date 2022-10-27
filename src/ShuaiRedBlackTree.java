@@ -4,8 +4,11 @@ public class ShuaiRedBlackTree {
     private final Node nil;
 
     public ShuaiRedBlackTree() {
-        this.nil = new Node(new ShuaiEntry(new ShuaiString("nil"),new ShuaiString("nil")),null,root,root,ShuaiColor.BLACK,false);
-        this.root = this.nil;
+        this.nil = new Node(new ShuaiEntry(new ShuaiString("nil"),new ShuaiString("nil")),root,root,root,ShuaiColor.BLACK,false);
+        this.root = nil;
+        nil.left = root;
+        nil.right = root;
+        nil.p = root;
     }
 
     static class Node {
@@ -16,9 +19,10 @@ public class ShuaiRedBlackTree {
         private ShuaiColor color;
         private boolean deleted;
 
-        public Node(ShuaiEntry entry, boolean deleted) {
+        public Node(ShuaiEntry entry, boolean deleted,Node p) {
             this.entry = entry;
             this.deleted = deleted;
+            this.p = p;
         }
 
         public Node(ShuaiEntry entry, Node p, Node left, Node right, ShuaiColor color, boolean deleted) {
@@ -267,5 +271,8 @@ public class ShuaiRedBlackTree {
         rbDelete(root);
         return root;
     }
-    
+
+    public Node getNil() {
+        return nil;
+    }
 }

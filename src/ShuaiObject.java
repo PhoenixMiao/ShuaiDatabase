@@ -38,7 +38,7 @@ public class ShuaiObject implements Serializable, Delayed {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.EXPIRE_TIME_INPUT_FAULT);
         }
         ShuaiString object = new ShuaiString(argv[1]);
-        object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000000);
+        object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * ShuaiConstants.ONT_NANO);
         db.getExpires().remove(new ShuaiExpireKey(object));
         db.getExpires().put(new ShuaiExpireKey(object));
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(argv[2]));

@@ -3,6 +3,7 @@ import java.lang.reflect.AccessibleObject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,8 +34,7 @@ public class ShuaiDB implements Serializable {
         dict = new ConcurrentHashMap<>();
         expires = new DelayQueue<>();
         lru = new ConcurrentHashMap<>();
-        if(ShuaiServer.eliminateStrategy == ShuaiEliminateStrategy.LSM_TREE) lsmTree = new ShuaiRedBlackTree();
-        else lsmTree = null;
+        lsmTree = new ShuaiRedBlackTree();
     }
 
     public ConcurrentHashMap<ShuaiString, ShuaiObject> getDict() {
@@ -67,5 +67,24 @@ public class ShuaiDB implements Serializable {
 
     public long getId() {
         return id;
+    }
+
+    public ShuaiEntry allKeysLRU() {
+        AtomicReference<ShuaiString> min = new AtomicReference<>();
+        AtomicLong mint = new AtomicLong(System.currentTimeMillis());
+        lru.forEach((k,v) -> {
+            if(v < mint.get()) {
+                mint.set(v);
+                min.set(k);
+            }
+        });
+        if(min.get()==null) return null;
+        lru.remove(min.get());
+        expires.remove(new ShuaiExpireKey(min.get()));
+        ShuaiEntry entry = new ShuaiEntry(min.get(),dict.get(min.get()));
+        System.out.println(entry);
+        dict.remove(min.get());
+        return entry;
+//                db.getExpires().remove(min.get());
     }
 }

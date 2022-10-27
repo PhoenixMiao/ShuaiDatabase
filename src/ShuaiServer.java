@@ -7,7 +7,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ShuaiServer {
@@ -16,11 +18,11 @@ public class ShuaiServer {
 
     public static ExecutorService executor = Executors.newFixedThreadPool(100);
 
-    public static ExecutorService aofExecutor = Executors.newSingleThreadExecutor();
+    public static ExecutorService fileExecutor = Executors.newSingleThreadExecutor();
 
-    public static ScheduledExecutorService serverCronExecutor = Executors.newScheduledThreadPool(5);
+    public static ScheduledExecutorService serverCronExecutor = Executors.newScheduledThreadPool(1);
 
-    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.LSM_TREE;
+    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_RANDOM;
 
     public static volatile boolean reachLimitation = false;
 
@@ -65,7 +67,11 @@ public class ShuaiServer {
     static final Lock rLsmFile = lsmLock.readLock();
     static final Lock wLsmFile = lsmLock.writeLock();
 
-    static volatile AtomicLong availableMemory = new AtomicLong(1024*1024);
+    static final ReentrantLock rbTreeLock = new ReentrantLock();
+
+    static final Condition rbTreeCondition = rbTreeLock.newCondition();
+
+    static volatile AtomicLong availableMemory = new AtomicLong(ShuaiConstants.MAX_MEMORY);
 
     public static void main(String[] args) {
         System.out.println("Listening for connections on port 8888");
@@ -86,6 +92,7 @@ public class ShuaiServer {
             return ;
         }
 
+
         if(isRdb) ShuaiServer.loadRdbFile();
         if(isAof) ShuaiServer.loadAofFile();
 
@@ -104,7 +111,7 @@ public class ShuaiServer {
             new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST).speakOut();
         }
 
-        serverCronExecutor.scheduleWithFixedDelay(new ServerCron(),1000,1000,TimeUnit.MILLISECONDS);
+        serverCronExecutor.scheduleAtFixedRate(new ServerCron(),1000,10000,TimeUnit.MILLISECONDS);
 
         while(true) {
             try{
@@ -180,7 +187,7 @@ public class ShuaiServer {
         ){
             bufferedReader.lines().forEach(x -> {
                 try{
-                    aofExecutor.submit(new ShuaiTask(new ShuaiRequest(x,true)));
+                    fileExecutor.submit(new ShuaiTask(new ShuaiRequest(x,true)));
                 }catch (RuntimeException ignored) {}
             });
         }catch (Exception e) {
@@ -190,87 +197,111 @@ public class ShuaiServer {
         }
     }
 
+    static class LSMWrite implements Runnable {
+        private final ShuaiDB db;
+
+        public LSMWrite(ShuaiDB db) {
+            this.db = db;
+        }
+
+        public ShuaiDB getDb() {
+            return db;
+        }
+
+        @Override
+        public void run() {
+            int size = db.getDict().size();
+            rbTreeLock.lock();
+            try {
+                while (db.getDict().size() >= size / 2) {
+                    ShuaiEntry entry = db.allKeysLRU();
+                    if (entry != null) db.getLsmTree().rbInsert(new ShuaiRedBlackTree.Node(entry, false,db.getLsmTree().getNil()));
+                    else rbTreeCondition.awaitNanos(3 * ShuaiConstants.ONT_NANO);
+                }
+            } catch (InterruptedException e) {
+                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.LSM_THREAD_INTERRUPTED);
+            } finally {
+                rbTreeLock.unlock();
+            }
+            if (db.getLsmTree().getHeight() > 0) {
+                List<ShuaiEntry> list = new LinkedList<>();
+                while (db.getLsmTree().getHeight() >= 4) list.add(db.getLsmTree().deleteRoot().getEntry());
+                //todo place it in distribute system
+                File lsmFolder = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.LSM_SUFFIX
+                        + "\\db" + db.getId() + "\\");
+                lsmFolder.mkdir();
+                File lsmFile = new File(lsmFolder.getPath() +"\\chunk"+ ShuaiDB.lsmID.incrementAndGet());
+                ShuaiServer.wLsmFile.lock();
+                try (
+                        FileOutputStream fileStream = new FileOutputStream(lsmFile);
+                        ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
+                ) {
+                    if (lsmFile.exists()) lsmFile.delete();
+                    lsmFile.createNewFile();
+                    objectStream.writeObject(list);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.LSM_WRITE_FAIL).speakOut();
+                } finally {
+                    ShuaiServer.wLsmFile.unlock();
+                }
+
+                File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
+                if(aofFile.exists()) {
+                    ShuaiServer.wAofFile.lock();
+                    try{
+                        aofFile.delete();
+                    }finally {
+                        ShuaiServer.wAofFile.unlock();
+                    }
+                }
+            }
+        }
+    }
+
     static class ServerCron implements Runnable {
 
         @Override
         public void run() {
-            //eliminate
-            ShuaiServer.availableMemory.addAndGet(-(Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory()));
-            long free = ShuaiServer.availableMemory.get();
-            for(ShuaiDB db : dbs) {
-//                if (free < 1024 * 1024) {
-//                    reachLimitation = true;
-//                    switch (eliminateStrategy) {
-//                        case ALLKEYS_LRU:
-//                            allKeysLRU(db);
-//                            break;
-//                        case VOLATILE_LRU:
-//                        case ALLKEYS_RANDOM:
-//                        case VOLATILE_RANDOM:
-//                        default:
-//                    }
-//                } else
-                    if (ShuaiServer.eliminateStrategy == ShuaiEliminateStrategy.LSM_TREE &&
-                        free < 1024*1024) {
-                    int size = db.getDict().size();
-                    while (db.getDict().size() >= size / 2) {
-                        ShuaiEntry entry = allKeysLRU(db);
-                        db.getLsmTree().rbInsert(new ShuaiRedBlackTree.Node(entry,false));
-                    }
-                    if(db.getLsmTree().getHeight() > 5) {
-                        List<ShuaiEntry> list = new LinkedList<>();
-                        while(db.getLsmTree().getHeight() >= 4) list.add(db.getLsmTree().deleteRoot().getEntry());
-                        //todo place it in distribute system
-                        File lsmFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.LSM_SUFFIX
-                                + "\\db" + db.getId() + "\\" + ShuaiDB.lsmID.incrementAndGet());
-                        ShuaiServer.wLsmFile.lock();
-                        try(
-                                FileOutputStream fileStream = new FileOutputStream(lsmFile);
-                                ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
-                        ){
-                            if(lsmFile.exists()) lsmFile.delete();
-                            lsmFile.createNewFile();
-                            objectStream.writeObject(list);
-                        } catch (Exception e) {
-                            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.LSM_WRITE_FAIL).speakOut();
-                        } finally {
-                            ShuaiServer.wRdbFile.unlock();
+            try {
+                //eliminate
+                ShuaiServer.availableMemory.addAndGet(-(Runtime.getRuntime().totalMemory()) - Runtime.getRuntime().freeMemory());
+                long free = ShuaiServer.availableMemory.get();
+                for (ShuaiDB db : dbs) {
+                    if (free < 1024 * 1024) {
+                        reachLimitation = true;
+                        switch (eliminateStrategy) {
+                            case ALLKEYS_LRU:
+                                db.allKeysLRU();
+                            case VOLATILE_LRU:
+                            case ALLKEYS_RANDOM:
+                            case VOLATILE_RANDOM:
+                            default:
                         }
+                    } else if (ShuaiServer.eliminateStrategy == ShuaiEliminateStrategy.LSM_TREE &&
+                            free < ShuaiConstants.MAX_MEMORY / 100) {
+                        fileExecutor.submit(new LSMWrite(db));
                     }
                 }
-            }
 
-            //expire
-            for(ShuaiDB db : dbs) {
-                db.getExLock().lock();
-                try{
-                    db.getCondition().signalAll();
-                }finally {
-                    db.getExLock().unlock();
+                //expire
+                for (ShuaiDB db : dbs) {
+                    db.getExLock().lock();
+                    try {
+                        db.getCondition().signalAll();
+                    } finally {
+                        db.getExLock().unlock();
+                    }
                 }
+
+                //produce rdb file
+                new ShuaiTask.RdbProduce(true).call();
+            }catch (Exception e) {
+                e.printStackTrace();
             }
-
-            //produce rdb file
-            new ShuaiTask.RdbProduce(true).call();
-        }
-
-        private ShuaiEntry allKeysLRU(ShuaiDB db) {
-            AtomicReference<ShuaiString> min = new AtomicReference<>();
-            AtomicLong mint = new AtomicLong(System.currentTimeMillis());
-            db.getLru().forEach((k,v) -> {
-                if(v < mint.get()) {
-                    mint.set(v);
-                    min.set(k);
-                }
-            });
-            ShuaiEntry entry = new ShuaiEntry(min.get(),db.getDict().get(min.get()));
-            db.getDict().remove(min.get());
-            return entry;
-//                db.getExpires().remove(min.get());
         }
     }
 
-    //todo test
     static class RollExpires implements Runnable {
 
         private final ShuaiDB db;
