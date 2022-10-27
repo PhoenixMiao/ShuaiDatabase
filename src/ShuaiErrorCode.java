@@ -19,6 +19,7 @@ public enum ShuaiErrorCode {
     EXPIRE_THREAD_INTERRUPTED(1014,"Thread responsible for expire delete is interrupted."),
     MEMORY_RAN_OUT_AND_NOEVICTION(1015,"There is no memory for new entry."),
     LSM_WRITE_FAIL(1016, "Fail to write lsmFile."),
+    LSM_THREAD_INTERRUPTED(1017,"Thread responsible for lsm write is interrupted."),
     ;
 
     private final Integer errorCode;

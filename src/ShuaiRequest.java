@@ -24,6 +24,7 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         this.argc = COMMAND_PREFIXES.get(tmpArgv[0]);
         this.argv = new String[this.argc];
         this.argv[0] = tmpArgv[0];
+        tmpArgv[1] = tmpArgv[1].trim();
         if(this.argc>1) {
             StringBuilder builder = new StringBuilder(tmpArgv[1]);
             boolean flag = false;
@@ -49,7 +50,7 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
                 throw new RuntimeException();
             }
             if(flag) for(int i = 0;i<bridge.length;i++) {
-                bridge[i] = bridge[i].replace('\n',' ');
+                bridge[i] = bridge[i].trim().replace('\n',' ');
             }
             System.arraycopy(bridge, 0, this.argv, 1,this.argc - 1);
         }
@@ -111,5 +112,9 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         StringBuilder res = new StringBuilder();
         for(String argument : argv) res.append(argument).append(" ");
         return res.toString().trim();
+    }
+
+    public static void main(String[] args) {
+        new ShuaiRequest("GET");
     }
 }

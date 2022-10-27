@@ -101,7 +101,7 @@ public class ShuaiTask implements Callable<String> {
                 if(ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isWillModify()){
                     //todo more precise!
                     if(!shuaiRequest.getArgv()[0].equals("DEL")) db.getLru().put(new ShuaiString(shuaiRequest.getArgv()[1]),System.currentTimeMillis());
-                    if(ShuaiServer.isRdb && !shuaiRequest.isFake()) executor.submit(new RdbProduce(false));
+                    if(ShuaiServer.isRdb && !shuaiRequest.isFake() && ShuaiServer.eliminateStrategy!=ShuaiEliminateStrategy.LSM_TREE) executor.submit(new RdbProduce(false));
                     if(ShuaiServer.isAof && !shuaiRequest.isFake() && !shuaiRequest.getArgv()[0].endsWith("EXPIRE")) executor.submit(new AppendOnlyFile(shuaiRequest));
                 }
             }
@@ -113,7 +113,7 @@ public class ShuaiTask implements Callable<String> {
         }
     }
 
-    static class RdbProduce implements Callable<Integer>{
+    static class RdbProduce implements Callable<Integer> {
 
         private final boolean serverCron;
 

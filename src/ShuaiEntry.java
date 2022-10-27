@@ -33,4 +33,9 @@ public class ShuaiEntry implements Map.Entry<ShuaiString,ShuaiObject> , Serializ
     public int compareTo(ShuaiEntry o) {
         return this.key.compareTo(o.key);
     }
+
+    @Override
+    public String toString() {
+        return "[ " + key + " , " + value + " ]";
+    }
 }
