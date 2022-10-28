@@ -111,6 +111,8 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("EXPIRE", 3);
         put("PEXPIRE", 3);
         put("DEL",2);
+        put("SADD",3);
+        put("SCARD",2);
     }};
 
     @Override

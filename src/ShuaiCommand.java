@@ -38,6 +38,8 @@ public class ShuaiCommand {
             put("EXPIRE", new ShuaiCommand("EXPIRE", ShuaiObject.class.getMethod("expire", String[].class, ShuaiDB.class), 3,  false, true, null));
             put("PEXPIRE", new ShuaiCommand("PEXPIRE", ShuaiObject.class.getMethod("pExpire", String[].class, ShuaiDB.class), 3,  false, true, null));
             put("DEL",new ShuaiCommand("DEL",ShuaiObject.class.getMethod("delete", String[].class, ShuaiDB.class),2,true,true,null));
+            put("SADD",new ShuaiCommand("SADD",ShuaiSet.class.getMethod("sadd", String[].class, ShuaiDB.class),3,true,true,ShuaiObjectType.SHUAI_SET));
+            put("SCARD",new ShuaiCommand("SCARD",ShuaiSet.class.getMethod("scard", String[].class, ShuaiDB.class),2,false,false,ShuaiObjectType.SHUAI_SET));
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
