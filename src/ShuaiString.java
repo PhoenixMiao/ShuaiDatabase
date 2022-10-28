@@ -37,7 +37,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         } catch (NumberFormatException e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
         } catch (StringIndexOutOfBoundsException e) {
-            return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.OUT_OF_RANGE_FAULT);
+            return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.OUT_OF_RANGE_FAULT);
         }
     }
 
