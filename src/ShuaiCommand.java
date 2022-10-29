@@ -40,6 +40,19 @@ public class ShuaiCommand {
             put("DEL",new ShuaiCommand("DEL",ShuaiObject.class.getMethod("delete", String[].class, ShuaiDB.class),2,true,true,null));
             put("SADD",new ShuaiCommand("SADD",ShuaiSet.class.getMethod("sadd", String[].class, ShuaiDB.class),3,true,true,ShuaiObjectType.SHUAI_SET));
             put("SCARD",new ShuaiCommand("SCARD",ShuaiSet.class.getMethod("scard", String[].class, ShuaiDB.class),2,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SDIFF",new ShuaiCommand("SDIFF",ShuaiSet.class.getMethod("sdiff", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SDIFFSTORE",new ShuaiCommand("SDIFFSTORE",ShuaiSet.class.getMethod("sdiffstore", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_SET));
+            put("SUNION",new ShuaiCommand("SUNION",ShuaiSet.class.getMethod("sunion", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SUNIONSTORE",new ShuaiCommand("SUNIONSTORE",ShuaiSet.class.getMethod("sunionstore", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_SET));
+            put("SINTER",new ShuaiCommand("SINTER",ShuaiSet.class.getMethod("sinter", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SINTERSTORE",new ShuaiCommand("SINTERSTORE",ShuaiSet.class.getMethod("sinterstore", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SMEMBERS",new ShuaiCommand("SMEMBERS",ShuaiSet.class.getMethod("smembers", String[].class, ShuaiDB.class),2,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SMOVE",new ShuaiCommand("SMOVE",ShuaiSet.class.getMethod("smove", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_SET));
+            put("SISMEMBER",new ShuaiCommand("SISMEMBER",ShuaiSet.class.getMethod("sismember", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
+            put("SREM",new ShuaiCommand("SREM",ShuaiSet.class.getMethod("srem", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_SET));
+            put("SPOP",new ShuaiCommand("SPOP",ShuaiSet.class.getMethod("spop", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_SET));
+            put("SRANDMEMBER",new ShuaiCommand("SRANDMEMBER",ShuaiSet.class.getMethod("srandmember", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
+
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
