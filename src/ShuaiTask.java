@@ -1,3 +1,5 @@
+import lombok.extern.java.Log;
+
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
@@ -75,6 +77,7 @@ public class ShuaiTask implements Callable<String> {
             try{
                 while(cnt<shuaiRequest.getDb() && iterator.hasNext()) cnt++;
                 db = iterator.next();
+                ShuaiString key = new ShuaiString(shuaiRequest.getArgv()[1]);
                 object = db.getDict().get(new ShuaiString(shuaiRequest.getArgv()[1]));
             }catch (Exception e){
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST);
@@ -86,6 +89,7 @@ public class ShuaiTask implements Callable<String> {
                 db.getExLock().unlock();
             }
             ShuaiCommand shuaiCommand = ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]);
+            System.out.println(shuaiRequest.getArgv().length);
             if(object==null && !shuaiCommand.isStaticOrNot())
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.KEY_NOT_FOUND);
             if(object!=null && shuaiCommand.getType()!=null && object.getObjectType() != shuaiCommand.getType())
