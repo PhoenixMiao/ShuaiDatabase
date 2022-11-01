@@ -33,6 +33,7 @@ public class ShuaiSkipList {
 
         public Node(int level,double score,ShuaiString obj) {
             this.level = new Level[level];
+            for(int i = 0;i<level;i++) this .level[i] = new Level(null,0);
             this.score = score;
             this.obj = obj;
         }
@@ -41,7 +42,7 @@ public class ShuaiSkipList {
             this.level = node.level;
             this.score = node.score;
             this.obj = node.obj;
-            this.backward = new Node(node.backward);
+            this.backward = node.backward==null?null:new Node(node.backward);
         }
 
     }
@@ -269,5 +270,4 @@ public class ShuaiSkipList {
         }
         return removed;
     }
-
 }
