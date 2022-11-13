@@ -1,5 +1,10 @@
+
+import lombok.Data;
+
+
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Delayed;
 
 
 public class ShuaiSet extends ShuaiObject{
@@ -15,8 +20,10 @@ public class ShuaiSet extends ShuaiObject{
         ShuaiSet shuaiSet;
         try {
             //判断key是否已经存在
-            if (db.getDict().containsKey(new ShuaiString(argv[1])))
-                shuaiSet = (ShuaiSet) db.getDict().get(new ShuaiString(argv[1]));
+            if (db.getDict().containsKey(new ShuaiString(argv[1]))){
+               shuaiSet = (ShuaiSet) db.getDict().get(new ShuaiString(argv[1]));
+            }
+
             else {
                 shuaiSet = new ShuaiSet();
                 db.getDict().put(new ShuaiString(argv[1]), shuaiSet);
@@ -201,4 +208,9 @@ public class ShuaiSet extends ShuaiObject{
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(reply.toString()));
     }
 
+
+    @Override
+    public String toString() {
+        return set.toString();
+    }
 }
