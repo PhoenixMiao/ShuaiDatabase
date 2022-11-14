@@ -14,6 +14,9 @@ public class ShuaiZset extends ShuaiObject{
         this.objectType = ShuaiObjectType.SHUAI_ZSET;
     }
 
+    public ConcurrentHashMap<ShuaiString, Double> getDict() {
+        return dict;
+    }
 
     public ShuaiReply zsetLength(String[] argv, ShuaiDB db) {
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(ssl.getLength()+""));

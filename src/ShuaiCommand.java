@@ -35,6 +35,7 @@ public class ShuaiCommand {
             put("HLEN", new ShuaiCommand("HLEN", ShuaiHash.class.getMethod("hLen", String[].class, ShuaiDB.class), 2,  false, false, ShuaiObjectType.SHUAI_HASH));
             put("HGETALL", new ShuaiCommand("HGETALL", ShuaiHash.class.getMethod("hGetAll", String[].class, ShuaiDB.class), 2,  false, false, ShuaiObjectType.SHUAI_HASH));
             put("HDEL", new ShuaiCommand("HDEL", ShuaiHash.class.getMethod("hDel", String[].class, ShuaiDB.class), 3,  false, true, ShuaiObjectType.SHUAI_HASH));
+            put("HMSET", new ShuaiCommand("HMSET", ShuaiHash.class.getMethod("hMSet", String[].class, ShuaiDB.class), 4,  true, true, ShuaiObjectType.SHUAI_HASH));
             put("EXPIRE", new ShuaiCommand("EXPIRE", ShuaiObject.class.getMethod("expire", String[].class, ShuaiDB.class), 3,  false, true, null));
             put("PEXPIRE", new ShuaiCommand("PEXPIRE", ShuaiObject.class.getMethod("pExpire", String[].class, ShuaiDB.class), 3,  false, true, null));
             put("DEL",new ShuaiCommand("DEL",ShuaiObject.class.getMethod("delete", String[].class, ShuaiDB.class),2,true,true,null));

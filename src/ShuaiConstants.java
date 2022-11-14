@@ -11,4 +11,5 @@ public class ShuaiConstants {
     public static final String LSM_SUFFIX = "lsm\\";
     public static final long MAX_MEMORY = 10000000000L;
     public static final long ONT_NANO = 1000000000;
+    public static final long MAX_AOF_SIZE = 256 * 1024 * 1024;
 }

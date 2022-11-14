@@ -11,6 +11,10 @@ public class ShuaiSet extends ShuaiObject{
         this.objectType = ShuaiObjectType.SHUAI_SET;
     }
 
+    public CopyOnWriteArraySet<ShuaiObject> getSet() {
+        return set;
+    }
+
     public static ShuaiReply sadd(String[] argv, ShuaiDB db) {
         ShuaiSet shuaiSet;
         try {

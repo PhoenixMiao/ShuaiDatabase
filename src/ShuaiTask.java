@@ -3,12 +3,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -177,7 +174,7 @@ public class ShuaiTask implements Callable<String> {
                 if(ShuaiServer.isAof) {
                     ShuaiServer.wAofFile.lock();
                     try(
-                            FileWriter fileWriter = new FileWriter(new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX));
+                            FileWriter fileWriter = new FileWriter(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
                     ){
                         fileWriter.append("");
                     } catch (Exception e) {
@@ -206,19 +203,129 @@ public class ShuaiTask implements Callable<String> {
             return request;
         }
 
+        private static boolean rewriteFlag = false;
+
         @Override
         public void run() {
             ShuaiServer.wAofFile.lock();
             File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
-            try(
-                    FileWriter fileWriter = new FileWriter(aofFile,true);
-            ){
-                fileWriter.append(request.toString()).append(System.getProperty("line.separator"));
+            try (
+                    FileWriter fileWriter = new FileWriter(aofFile, true)
+            ) {
+                long size = aofFile.length();
+                if (size >= ShuaiConstants.MAX_AOF_SIZE && !rewriteFlag) {
+                    rewriteFlag = true;
+                    ShuaiServer.aofRewriteExecutor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            rewriteAof();
+                        }
+                    });
+                } else {
+                    fileWriter.append(request.toString()).append(System.getProperty("line.separator"));
+                }
             } catch (Exception e) {
-                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.AOF_WRITE_FAIL).speakOut();
+                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.AOF_WRITE_FAIL).speakOut();
             } finally {
                 ShuaiServer.wAofFile.unlock();
             }
+        }
+    }
+
+
+    private static void rewriteAof() {
+        System.out.println("rewrite");
+        int totalLine = 0;
+        File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
+        try (FileReader fr = new FileReader(aofFile);
+             LineNumberReader lnr = new LineNumberReader(fr)) {
+            lnr.skip(Long.MAX_VALUE);
+            totalLine = lnr.getLineNumber() + 1;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        File tmpAof = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.NEW_AOF_SUFFIX);
+        for (ShuaiDB db : ShuaiServer.dbs) {
+            if (db.getDict().size() == 0) continue;
+            try (
+                    FileWriter fileWriter = new FileWriter(tmpAof)
+            ) {
+//                fileWriter.append("SELECT ").append(String.valueOf(db.getId())).append(System.getProperty("line.separator"));
+                for (ShuaiString key : db.getDict().keySet()) {
+                    ShuaiObject value = db.getDict().get(key);
+                    //如果已经过期那么就跳过它
+                    if (value.getObjectType() == ShuaiObjectType.SHUAI_STRING) {
+                        fileWriter.append("SET ").append(key.toString()).append(" ").append(value.toString()).append(" ").append(System.getProperty("line.separator"));
+                    } else if (value.getObjectType() == ShuaiObjectType.SHUAI_LIST) {
+                        fileWriter.append("RPUSH ").append(key.toString()).append(" ");
+                        ShuaiList list = (ShuaiList) value;
+                        for (ShuaiObject elem : list.getList()) {
+                            fileWriter.append(elem.toString()).append(" ");
+                        }
+                        fileWriter.append(System.getProperty("line.separator"));
+                    } else if (value.getObjectType() == ShuaiObjectType.SHUAI_HASH) {
+                        fileWriter.append("HMSET ").append(key.toString()).append(" ");
+                        ShuaiHash hash = (ShuaiHash) value;
+                        for (ShuaiString field : hash.getHashMap().keySet()) {
+                            ShuaiObject hashValue = hash.getHashMap().get(field);
+                            fileWriter.append(field.toString()).append(" ").append(hashValue.toString()).append(" ");
+                        }
+                        fileWriter.append(System.getProperty("line.separator"));
+                    } else if (value.getObjectType() == ShuaiObjectType.SHUAI_SET) {
+                        fileWriter.append("SADD ").append(key.toString()).append(" ");
+                        ShuaiSet set = (ShuaiSet) value;
+                        for (ShuaiObject elem : set.getSet()) {
+                            fileWriter.append(elem.toString()).append(" ");
+                        }
+                        fileWriter.append(System.getProperty("line.separator"));
+                    } else if (value.getObjectType() == ShuaiObjectType.SHUAI_ZSET) {
+                        fileWriter.append("ZADD ").append(key.toString()).append(" ");
+                        ShuaiZset zSet = (ShuaiZset) value;
+                        for (ShuaiObject field : zSet.getDict().keySet()) {
+                            Double score = zSet.getDict().get(field);
+                            fileWriter.append(score.toString()).append(" ").append(field.toString()).append(" ");
+                        }
+                        fileWriter.append(System.getProperty("line.separator"));
+                    } else {
+                        throw new IOException();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ShuaiServer.wAofFile.lock();
+
+            try(
+                    FileReader fr = new FileReader(aofFile);
+                    LineNumberReader lnr = new LineNumberReader(fr);
+                    FileWriter fileWriter = new FileWriter(tmpAof, true)
+            ){
+                int line = 0;
+                String newLine;
+                while (line < totalLine) {
+                    line++;
+                    lnr.readLine();
+                }
+                while ((newLine = lnr.readLine()) != null) {
+                    fileWriter.append(newLine).append(System.getProperty("line.separator"));
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+            try  {
+                aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
+                if (aofFile.exists()) {
+                    aofFile.delete();
+                }
+                tmpAof.renameTo(aofFile);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                ShuaiServer.wAofFile.unlock();
+                AppendOnlyFile.rewriteFlag = false;
+            }
+
         }
     }
 

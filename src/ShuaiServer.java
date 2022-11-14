@@ -24,6 +24,8 @@ public class ShuaiServer {
 
     public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_RANDOM;
 
+    public static ExecutorService aofRewriteExecutor = Executors.newFixedThreadPool(10);
+
     public static volatile boolean reachLimitation = false;
 
     public static ConcurrentLinkedDeque<ShuaiDB> dbs = new ConcurrentLinkedDeque<ShuaiDB>(){{
