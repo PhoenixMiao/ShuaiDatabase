@@ -1,3 +1,4 @@
+import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -81,9 +82,50 @@ public class ShuaiSkipList {
         this.level = level;
     }
 
-    public int randomLevel() {
+    public String traverse(long begin,long end,boolean withscores,boolean reverse){
+        StringBuilder res = new StringBuilder();
+        if(!reverse){
+            if(begin>end){
+                long temp=begin;
+                begin=end;
+                end=temp;
+            }
+            if(begin>this.length)return"";
+            if(begin==0 && end==0)return"";
+            end = end>this.length?this.length:end;
+
+            Node ln=this.zslGetElementByRank(begin);
+            long rangelen = Math.abs(begin-end)+1;
+            while(rangelen-->0 && ln!=null) {
+                res.append(ln.obj+" ");
+                if(withscores)res.append(ln.score+" ");
+                ln =ln.level[0].forward;
+            }
+        }else if(reverse){
+            if(begin<end){
+                long temp=begin;
+                begin=end;
+                end=temp;
+            }
+            if(end>this.length)return"";
+            if(begin==0 && end==0)return"";
+            begin = begin>this.length?this.length:begin;
+            Node ln=this.zslGetElementByRank(begin);
+            long rangelen = Math.abs(begin-end)+1;
+            while(rangelen-->0 && ln!=null) {
+                res.append(ln.obj+" ");
+                if(withscores)res.append(ln.score+" ");
+                ln =ln.backward;
+            }
+        }
+        return res.toString();
+    }
+
+    private int randomLevel() {
         int level = 1;
-        while(Math.random() < SHUAISKIPLIST_P) level++;
+        Random random = new Random();
+        while ((random.nextInt(0xFFFF)) < (SHUAISKIPLIST_P * 0xFFFF))
+            level += 1;
         return Math.min(level, SHUAISKIPLIST_MAXLEVEL);
     }
 
@@ -94,17 +136,16 @@ public class ShuaiSkipList {
         lock.lock();
         Node x;
         try {
-            Node header = new Node(this.header);
-            int length = this.length;
-            int level = this.level;
-            Node.Level[] snapshot = header.level;
+//            Node header = new Node(this.header);
+//            int length = this.length;
+//            int level = this.level;
             x = header;
             for (int i = level - 1; i >= 0; i--) {
                 rank[i] = i == level - 1 ? 0 : rank[i + 1];
-                while (snapshot[i].forward != null && (snapshot[i].forward.score < score
-                        || (snapshot[i].forward.score == score && snapshot[i].forward.obj.compareTo(obj) < 0))) {
-                    rank[i] += snapshot[i].span;
-                    x = snapshot[i].forward;
+                while (x.level[i].forward != null && (x.level[i].forward.score < score
+                        || (x.level[i].forward.score == score && x.level[i].forward.obj.compareTo(obj) < 0))) {
+                    rank[i] += x.level[i].span;
+                    x = x.level[i].forward;
                 }
                 update[i] = x;
             }
@@ -202,7 +243,7 @@ public class ShuaiSkipList {
         return true;
     }
 
-    private Node firstInRange(RangeSpec range) {
+    public Node firstInRange(RangeSpec range) {
         if(!isInRange(range)) return null;
         Node x = header;
         for(int i = level-1 ; i>=0 ; i--) {
@@ -213,11 +254,11 @@ public class ShuaiSkipList {
         x = x.level[0].forward;
         assert x!=null;
 
-        if(valueLteMax(x.score,range)) return null;
+        if(!valueLteMax(x.score,range)) return null;
         return x;
     }
 
-    private Node lastInRange(RangeSpec range) {
+    public Node lastInRange(RangeSpec range) {
         if(!isInRange(range)) return null;
         Node x = header;
         for(int i = level-1;i>=0;i--) {
@@ -225,7 +266,7 @@ public class ShuaiSkipList {
                 x = x.level[i].forward;
         }
         assert x!=null;
-        if(valueLteMax(x.score,range)) return null;
+        if(!valueLteMax(x.score,range)) return null;
         return x;
     }
 
@@ -269,5 +310,62 @@ public class ShuaiSkipList {
             lock.unlock();
         }
         return removed;
+    }
+
+    public long zslGetRank(Node node) {
+        if(node==null)return 0;
+        double score = node.score;
+        ShuaiString shuaiObject = node.obj;
+        long rank = 0;
+        int i;
+
+//        x = zsl->header;
+        Node x = this.header;
+        for (i = this.level-1; i >= 0; i--) {
+            while (x.level[i].forward!=null &&
+                    (x.level[i].forward.score < score ||
+            (x.level[i].forward.score == score &&  shuaiObject.compareTo(x.level[i].forward.obj) <= 0
+            ))) {
+                rank += x.level[i].span;
+                x = x.level[i].forward;
+            }
+
+            /* x might be equal to zsl->header, so test if obj is non-NULL */
+            if (x.obj!=null && shuaiObject.equals(x.obj)) {
+                return rank;
+            }
+        }
+        return 0L;
+    }
+
+    public Node zslGetElementByRank(long rank) {
+        Node x;
+        long traversed = 0;
+        int i;
+
+        x = this.header;
+        for (i = this.level-1; i >= 0; i--) {
+            while (x.level[i].forward!=null && (traversed + x.level[i].span) <= rank)
+            {
+                traversed += x.level[i].span;
+                x = x.level[i].forward;
+            }
+            if (traversed == rank) {
+                return x;
+            }
+        }
+        return null;
+    }
+
+    public  static void main(String[] args){
+        ShuaiSkipList shuaiSkipList = new ShuaiSkipList();
+        shuaiSkipList.insert(1.0,new ShuaiString("one"));
+        System.out.println(shuaiSkipList.getLength());
+        shuaiSkipList.insert(1.0,new ShuaiString("one"));
+        System.out.println(shuaiSkipList.getLength());
+        shuaiSkipList.insert(2.0,new ShuaiString("two"));
+        System.out.println(shuaiSkipList.getLength());
+        Node third = shuaiSkipList.zslGetElementByRank(0);
+        System.out.println(third.obj);
     }
 }
