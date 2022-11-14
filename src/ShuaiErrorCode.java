@@ -20,7 +20,6 @@ public enum ShuaiErrorCode {
     MEMORY_RAN_OUT_AND_NOEVICTION(1015,"There is no memory for new entry."),
     LSM_WRITE_FAIL(1016, "Fail to write lsmFile."),
     LSM_THREAD_INTERRUPTED(1017,"Thread responsible for lsm write is interrupted."),
-    MEMBER_NOT_EXIST(1018,"The key dose not have the member."),
     ;
 
     private final Integer errorCode;
