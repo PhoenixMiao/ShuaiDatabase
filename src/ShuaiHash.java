@@ -80,6 +80,33 @@ public class ShuaiHash extends ShuaiObject {
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res.toString()));
     }
 
+    public static ShuaiReply hMSet(String[] argv, ShuaiDB db) {
+        String key = argv[1];
+        String field = argv[2];
+        String value = argv[3];
+        ShuaiHash shuaiHash;
+        try {
+            if (db.getDict().containsKey(new ShuaiString(argv[1])))
+                shuaiHash = (ShuaiHash) db.getDict().get(new ShuaiString(argv[1]));
+            else {
+                shuaiHash = new ShuaiHash();
+                db.getDict().put(new ShuaiString(key), shuaiHash);
+            }
+            String[] pairs = value.split(" ");
+            if (pairs.length % 2 == 0) {
+                return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.NUMBER_OF_ARGUMENTS_FAULT);
+            }
+            shuaiHash.hashMap.put(new ShuaiString(field), new ShuaiString(pairs[0]));
+            for (int i = 1; i < pairs.length; i += 2) {
+                shuaiHash.hashMap.put(new ShuaiString(pairs[i]), new ShuaiString(pairs[i + 1]));
+            }
+            return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString("OK"));
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+            return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder res = new StringBuilder();

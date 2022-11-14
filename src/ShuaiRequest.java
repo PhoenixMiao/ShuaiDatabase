@@ -108,6 +108,7 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("HLEN",2);
         put("HGETALL",2);
         put("HDEL",3);
+        put("HMSET",4);
         put("EXPIRE", 3);
         put("PEXPIRE", 3);
         put("DEL",2);
