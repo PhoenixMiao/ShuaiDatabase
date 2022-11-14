@@ -125,6 +125,22 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("SUNIONSTORE",4);
         put("SPOP",3);
         put("SRANDMEMBER",3);
+        put("ZADD",3);
+        put("ZCARD",2);
+        put("ZCOUNT",4);
+        put("ZINCRBY",3);
+        put("ZINTERSTORE",4);
+        put("ZRANGEBYSCORE",4);
+        put("ZRANGE",4);
+        put("ZRANK",3);
+        put("ZREM",3);
+        put("ZREMRANGEBYRANK",4);
+        put("ZREMRANGEBYSCORE",4);
+        put("ZREVRANGE",4);
+        put("ZREVRANGEBYSCORE",4);
+        put("ZREVRANK",3);
+        put("ZSCORE",3);
+
     }};
 
     @Override
