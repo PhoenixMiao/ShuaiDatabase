@@ -52,22 +52,6 @@ public class ShuaiCommand {
             put("SREM",new ShuaiCommand("SREM",ShuaiSet.class.getMethod("srem", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_SET));
             put("SPOP",new ShuaiCommand("SPOP",ShuaiSet.class.getMethod("spop", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_SET));
             put("SRANDMEMBER",new ShuaiCommand("SRANDMEMBER",ShuaiSet.class.getMethod("srandmember", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_SET));
-            put("ZADD",new ShuaiCommand("ZADD",ShuaiZset.class.getMethod("zadd", String[].class, ShuaiDB.class),3,true,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZCARD",new ShuaiCommand("ZCARD",ShuaiZset.class.getMethod("zsetLength",String[].class, ShuaiDB.class),2,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZCOUNT",new ShuaiCommand("ZCOUNT",ShuaiZset.class.getMethod("zcount", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZINCRBY",new ShuaiCommand("ZINCRBY",ShuaiZset.class.getMethod("zincrby", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZINTERSTORE",new ShuaiCommand("ZINTERSTORE",ShuaiZset.class.getMethod("zinterstore", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZRANGEBYSCORE",new ShuaiCommand("ZRANGEBYSCORE",ShuaiZset.class.getMethod("zrangeByScore", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZRANGE",new ShuaiCommand("ZRANGE",ShuaiZset.class.getMethod("zrange", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZRANK",new ShuaiCommand("ZRANK",ShuaiZset.class.getMethod("zrank", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREM",new ShuaiCommand("ZREM",ShuaiZset.class.getMethod("zrem", String[].class, ShuaiDB.class),3,false,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREMRANGEBYRANK",new ShuaiCommand("ZREMRANGEBYRANK",ShuaiZset.class.getMethod("zremRangeByRank", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREMRANGEBYSCORE",new ShuaiCommand("ZREMRANGEBYSCORE",ShuaiZset.class.getMethod("zremRangeByScore", String[].class, ShuaiDB.class),4,false,true,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREVRANGE",new ShuaiCommand("ZREVRANGE",ShuaiZset.class.getMethod("zrevRange", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREVRANGEBYSCORE",new ShuaiCommand("ZREVRANGEBYSCORE",ShuaiZset.class.getMethod("zrevRangeByScore", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZREVRANK",new ShuaiCommand("ZREVRANK",ShuaiZset.class.getMethod("zrevRank", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_ZSET));
-            put("ZSCORE",new ShuaiCommand("ZSCORE",ShuaiZset.class.getMethod("zscore", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_ZSET));
-
 
         } catch (NoSuchMethodException e) {
             e.printStackTrace();

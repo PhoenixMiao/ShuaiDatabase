@@ -6,7 +6,6 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 public class ShuaiObject implements Serializable, Delayed {
 
     protected ShuaiObjectType objectType;
