@@ -136,9 +136,9 @@ public class ShuaiSkipList {
         lock.lock();
         Node x;
         try {
-//            Node header = new Node(this.header);
-//            int length = this.length;
-//            int level = this.level;
+            Node header = new Node(this.header);
+            int length = this.length;
+            int level = this.level;
             x = header;
             for (int i = level - 1; i >= 0; i--) {
                 rank[i] = i == level - 1 ? 0 : rank[i + 1];
