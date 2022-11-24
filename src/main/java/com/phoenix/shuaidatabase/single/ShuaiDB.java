@@ -1,6 +1,8 @@
 package com.phoenix.shuaidatabase.single;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -71,8 +73,10 @@ public class ShuaiDB implements Serializable {
     }
 
     public ShuaiEntry allKeysLRU() {
+        if(lru.size()==0)return new ShuaiEntry(new ShuaiString(""),new ShuaiObject());
         AtomicReference<ShuaiString> min = new AtomicReference<>();
         AtomicLong mint = new AtomicLong(System.currentTimeMillis());
+        ShuaiEntry entry;
         lru.forEach((k,v) -> {
             if(v < mint.get()) {
                 mint.set(v);
@@ -82,10 +86,83 @@ public class ShuaiDB implements Serializable {
         if(min.get()==null) return null;
         lru.remove(min.get());
         expires.remove(new ShuaiExpireKey(min.get()));
-        ShuaiEntry entry = new ShuaiEntry(min.get(),dict.get(min.get()));
-        System.out.println(entry);
+        entry = new ShuaiEntry(min.get(),dict.get(min.get()));
         dict.remove(min.get());
         return entry;
-//                db.getExpires().remove(min.get());
+    }
+
+    public ShuaiEntry allKeysRandom() {
+        if(dict.size()==0)return new ShuaiEntry(new ShuaiString(""),new ShuaiObject());
+        ShuaiString randomKey = dictGetRandomKey(dict);
+        lru.remove(randomKey);
+        expires.remove(randomKey);
+        ShuaiEntry entry = new ShuaiEntry(randomKey,dict.get(randomKey));
+        dict.remove(randomKey);
+        return entry;
+    }
+
+    public ShuaiEntry volatileKeysLRU() {
+        if(expires.size()==0 || lru.size()==0)return new ShuaiEntry(new ShuaiString(""),new ShuaiObject());
+        AtomicReference<ShuaiString> min = new AtomicReference<>();
+        AtomicLong mint = new AtomicLong(System.currentTimeMillis());
+        lru.forEach((k,v) -> {
+            if(v < mint.get()) {
+                mint.set(v);
+                min.set(k);
+            }
+        });
+        if(min.get()==null) return null;
+        for(ShuaiExpireKey expireKey: expires){
+            if(expireKey.getKey().equals(min.get())){
+                lru.remove(min.get());
+                expires.remove(new ShuaiExpireKey(min.get()));
+                ShuaiEntry entry = new ShuaiEntry(min.get(),dict.get(min.get()));
+                dict.remove(min.get());
+                return entry;
+            }
+        }
+        return null;
+    }
+
+
+
+    public ShuaiEntry volatileKeysRandom() {
+        if(expires.size()==0 || dict.size()==0)return new ShuaiEntry(new ShuaiString(""),new ShuaiObject());
+        ShuaiString randomKey = expireGetRandomKey(expires);
+        lru.remove(randomKey);
+        expires.remove(randomKey);
+        ShuaiEntry entry = new ShuaiEntry(randomKey,dict.get(randomKey));
+        dict.remove(randomKey);
+        return entry;
+    }
+
+    public ShuaiString dictGetRandomKey(ConcurrentHashMap<ShuaiString,ShuaiObject> dict)
+    {
+        if (dict.size() == 0) return null;
+        int dictEntry = new Random().nextInt(dict.size());
+        Map.Entry randomEntry = null;
+        for(Map.Entry entry : dict.entrySet()){
+            dictEntry--;
+            if(dictEntry<0){
+                randomEntry = entry;
+                break;
+            }
+        }
+        return  new ShuaiString((String) randomEntry.getKey());
+    }
+
+    public ShuaiString expireGetRandomKey(DelayQueue<ShuaiExpireKey> expires)
+    {
+        if (expires.size() == 0) return null;
+        int dictEntry = new Random().nextInt(expires.size());
+        ShuaiExpireKey randomKey=null;
+        for(ShuaiExpireKey expireKey : expires){
+            dictEntry--;
+            if(dictEntry<0){
+                randomKey = expireKey;
+                break;
+            }
+        }
+        return randomKey.getKey();
     }
 }
