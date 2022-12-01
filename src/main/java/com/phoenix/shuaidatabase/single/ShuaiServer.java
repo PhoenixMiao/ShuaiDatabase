@@ -282,8 +282,11 @@ public class ShuaiServer {
                             case ALLKEYS_LRU:
                                 db.allKeysLRU();
                             case VOLATILE_LRU:
+                                db.volatileKeysLRU();
                             case ALLKEYS_RANDOM:
+                                db.allKeysRandom();
                             case VOLATILE_RANDOM:
+                                db.volatileKeysRandom();
                             default:
                         }
                     } else if (ShuaiServer.eliminateStrategy == ShuaiEliminateStrategy.LSM_TREE &&
