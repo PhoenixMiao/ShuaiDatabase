@@ -1,6 +1,7 @@
 package com.phoenix.shuaidatabase.single;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
@@ -61,6 +62,19 @@ public class ShuaiObject implements Serializable, Delayed {
 
     public ShuaiReply pExpireAt(String[] argv, ShuaiDB db) {
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiObject());
+    }
+
+    public static ShuaiReply select(String[] argv, ShuaiDB db) {
+        try{
+            int dbId = Integer.parseInt(argv[1]);
+            Iterator<ShuaiDB> iterator = ShuaiServer.dbs.iterator();
+            int cnt = 0;
+            while(cnt<dbId && iterator.hasNext()) cnt++;
+            ShuaiServer.dbActive = iterator.next();
+            return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("OK"));
+        }catch (Exception e){
+            return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.NO_SUCH_DATABASE);
+        }
     }
 
     @Override

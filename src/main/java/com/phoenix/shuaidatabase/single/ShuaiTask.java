@@ -3,8 +3,13 @@ package com.phoenix.shuaidatabase.single;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -35,29 +40,36 @@ public class ShuaiTask implements Callable<String> {
         if(aofRequest==null) {
             SocketChannel client = (SocketChannel) key.channel();
             ByteBuffer output = (ByteBuffer) key.attachment();
-            output.rewind();
+            output.clear();
             client.read(output);
-            output.rewind();
-//        StringBuilder request = new StringBuilder();
-//        for(int a = output.get();a!=0;a = output.get()) request.append((char)a);
-            request = (ShuaiRequest) ShuaiTalk.backToObject(output.array());
-            assert key.isWritable();
-            output.rewind();
-            ShuaiReply reply = executeMethod(request);
-            reply.setResponsiveRequest(request);
-            output.put(reply.toBytes());
-            System.out.println(request);
-            output.rewind();
-            client.write(output);
-            output.compact();
-            key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+            output.flip();
+            ShuaiReply reply;
+            try{
+                String input = StandardCharsets.UTF_8.decode(output).toString();
+//                System.out.println(input);
+                request = new ShuaiRequest(input);
+                assert key.isWritable();
+                output.clear();
+                reply = executeMethod(request);
+                reply.setResponsiveRequest(request);
+                output.put(reply.toString().getBytes(StandardCharsets.UTF_8));
+//                reply.speakOut();
+                output.flip();
+                client.write(output);
+                output.clear();
+                key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+            }catch (RuntimeException e) {
+                output.put(e.getMessage().getBytes(StandardCharsets.UTF_8));
+                output.flip();
+                client.write(output);
+                output.clear();
+                key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+            }
         }else {
             request = aofRequest;
             ShuaiReply reply = executeMethod(request);
             reply.setResponsiveRequest(request);
-            System.out.println(reply);
         }
-
         return null;
     }
 
@@ -67,20 +79,11 @@ public class ShuaiTask implements Callable<String> {
         ShuaiCommand command = ShuaiCommand.commands.get(argv[0]);
 //        if(shuaiRequest.getArgc()!=command.getArity()) return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.NUMBER_OF_ARGUMENTS_FAULT);
         long startTime = System.currentTimeMillis();
-        ShuaiDB db;
         try {
+            ShuaiDB db = ShuaiServer.dbActive;
             ShuaiReply reply = null;
-            Iterator<ShuaiDB> iterator = ShuaiServer.dbs.iterator();
-            int cnt = 0;
             ShuaiObject object = null;
-            try{
-                while(cnt<shuaiRequest.getDb() && iterator.hasNext()) cnt++;
-                db = iterator.next();
-                ShuaiString key = new ShuaiString(shuaiRequest.getArgv()[1]);
-                object = db.getDict().get(new ShuaiString(shuaiRequest.getArgv()[1]));
-            }catch (Exception e){
-                return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST);
-            }
+            object = db.getDict().get(new ShuaiString(shuaiRequest.getArgv()[1]));
             db.getExLock().lock();
             try{
                 db.getCondition().signalAll();
@@ -88,7 +91,6 @@ public class ShuaiTask implements Callable<String> {
                 db.getExLock().unlock();
             }
             ShuaiCommand shuaiCommand = ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]);
-            System.out.println(shuaiRequest.getArgv().length);
             if(object==null && !shuaiCommand.isStaticOrNot())
                 return new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.KEY_NOT_FOUND);
             if(object!=null && shuaiCommand.getType()!=null && object.getObjectType() != shuaiCommand.getType())
@@ -108,7 +110,6 @@ public class ShuaiTask implements Callable<String> {
                     if(ShuaiServer.isAof && !shuaiRequest.isFake() && !shuaiRequest.getArgv()[0].endsWith("EXPIRE")) executor.submit(new AppendOnlyFile(shuaiRequest));
                 }
             }
-            db = null;
             return reply;
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();

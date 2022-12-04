@@ -25,6 +25,7 @@ public enum ShuaiErrorCode {
     MEMBER_NOT_EXIST(1018,"The key dose not have the member."),
     CAN_NOT_GET_LEADER(1019,"Fail to gain leader message"),
     RAFT_FAIL(1020,"raft service fail for unknown reason"),
+    NO_SUCH_DATABASE(1021,"no such database"),
     ;
 
     private final Integer errorCode;
@@ -38,10 +39,7 @@ public enum ShuaiErrorCode {
 
     @Override
     public String toString() {
-        return "CommonErrorCode{\n" +
-                "errorCode=" + errorCode +
-                ",\n errorMsg='" + errorMsg + '\'' +
-                '}';
+        return errorMsg;
     }
 
     //use for json serialization

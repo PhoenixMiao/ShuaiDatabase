@@ -148,7 +148,8 @@ public class ShuaiDB implements Serializable {
                 break;
             }
         }
-        return  new ShuaiString((String) randomEntry.getKey());
+        assert randomEntry != null;
+        return (ShuaiString) randomEntry.getKey();
     }
 
     public ShuaiString expireGetRandomKey(DelayQueue<ShuaiExpireKey> expires)

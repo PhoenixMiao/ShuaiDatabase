@@ -17,13 +17,13 @@ public class ShuaiServer {
 
     public static int DEFAULT_PORT = 8888;
 
-    public static ExecutorService executor = Executors.newFixedThreadPool(100);
+    public static ExecutorService executor = Executors.newFixedThreadPool(1000);
 
     public static ExecutorService fileExecutor = Executors.newSingleThreadExecutor();
 
     public static ScheduledExecutorService serverCronExecutor = Executors.newScheduledThreadPool(1);
 
-    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_RANDOM;
+    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_LRU;
 
     public static ExecutorService aofRewriteExecutor = Executors.newFixedThreadPool(10);
 
@@ -35,9 +35,11 @@ public class ShuaiServer {
         add(new ShuaiDB());
     }};
 
-    public static Boolean isAof = true;
-    public static Boolean isRdb = true;
-    public static Boolean isLsm = true;
+    public static ShuaiDB dbActive = dbs.getFirst();
+
+    public static Boolean isAof = false;
+    public static Boolean isRdb = false;
+    public static Boolean isLsm = false;
 
     public static AtomicLong lastSave = new AtomicLong(System.currentTimeMillis());
 
@@ -73,6 +75,11 @@ public class ShuaiServer {
     static final ReentrantLock rbTreeLock = new ReentrantLock();
 
     static final Condition rbTreeCondition = rbTreeLock.newCondition();
+
+//    static final ReentrantReadWriteLock dbLock = new ReentrantReadWriteLock();
+//
+//    static final Lock modifyDBLock = dbLock.readLock();
+//    static final Lock switchDBLock = dbLock.writeLock();
 
     static volatile AtomicLong availableMemory = new AtomicLong(ShuaiConstants.MAX_MEMORY);
 
@@ -139,11 +146,11 @@ public class ShuaiServer {
                         SelectionKey key2 = client.register(selector,SelectionKey.OP_WRITE | SelectionKey.OP_READ);
                         ByteBuffer input = ByteBuffer.allocate(2000);
                         input.put(ShuaiConstants.WELCOME);
-                        input.rewind();
+                        input.flip();
                         key2.attach(input);
 //                        while(!client.finishConnect());
                         client.write(input);
-                        input.compact();
+                        input.clear();
                     }else if(key.isReadable()) {
                         executor.submit(new ShuaiTask(key));
                         key.interestOps(SelectionKey.OP_WRITE);
@@ -185,7 +192,7 @@ public class ShuaiServer {
     public static void loadAofFile() {
         File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
         if(!aofFile.exists()) {
-            System.out.println("can  not find");
+            System.out.println("can not find");
             return ;
         }
         ShuaiServer.rAofFile.lock();
