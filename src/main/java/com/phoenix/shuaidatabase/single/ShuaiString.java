@@ -22,7 +22,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     public static ShuaiReply set(String[] argv, ShuaiDB db) {
         db.getDict().put(new ShuaiString(argv[1]), new ShuaiString(argv[2]));
-        return new ShuaiReply(ShuaiReplyStatus.OK, (ShuaiObject) null);
+        return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString("OK"));
     }
 
     public ShuaiReply getRange(String[] argv, ShuaiDB db) {

@@ -12,16 +12,15 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
 
     private final String[] argv;
 
-    //todo think of concurrent
-    private int db;
-
     private boolean fake = false;
 
     public ShuaiRequest(String input) {
         String[] tmpArgv = input.split(" ",2);
         if(tmpArgv.length==0 || !COMMAND_PREFIXES.containsKey(tmpArgv[0])) {
-            new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND).speakOut();
-            throw new RuntimeException();
+            ShuaiReply reply = new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND);
+//            reply.speakOut();
+            System.out.println(input);
+            throw new RuntimeException(String.valueOf(reply));
         }
         this.argc = COMMAND_PREFIXES.get(tmpArgv[0]);
         this.argv = new String[this.argc];
@@ -65,14 +64,6 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
 
     public boolean isFake() {
         return fake;
-    }
-
-    public void setDb(int db) {
-        this.db = db;
-    }
-
-    public int getDb() {
-        return db;
     }
 
     public int getArgc() {
@@ -143,7 +134,7 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("ZREVRANGEBYSCORE",4);
         put("ZREVRANK",3);
         put("ZSCORE",3);
-
+        put("SELECT",2);
     }};
 
     @Override

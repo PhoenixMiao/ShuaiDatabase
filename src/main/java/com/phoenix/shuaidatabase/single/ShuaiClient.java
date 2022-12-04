@@ -1,11 +1,15 @@
 package com.phoenix.shuaidatabase.single;
 
+import com.mongodb.DBPortPool;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class ShuaiClient {
@@ -38,33 +42,23 @@ public class ShuaiClient {
                 buffer = ByteBuffer.allocate(2000);
                 String input = scanner.nextLine().trim();
                 if(input.equals("exit")) break;
-                ShuaiRequest request;
-                try{
-                    request = new ShuaiRequest(input);
-                    request.setDb(db);
-                }catch (RuntimeException e){
-                    continue;
-                }
-                buffer.put(request.toBytes());
-                buffer.rewind();
+                buffer.put(input.getBytes(StandardCharsets.UTF_8));
+                buffer.flip();
                 client.write(buffer);
-                buffer.compact();
+                buffer.clear();
                 ByteBuffer newRead = ByteBuffer.allocate(2000);
                 if(client.read(newRead) != -1) {
                     newRead.flip();
-                    ShuaiReply reply = (ShuaiReply) ShuaiTalk.backToObject(newRead.array());
-                    reply.speakOut();
-//                    out.write(newRead);
-//                    System.out.println("");
+//                    ShuaiReply reply = (ShuaiReply) ShuaiTalk.backToObject(newRead.array());
+//                    reply.speakOut();
+                    out.write(newRead);
+                    System.out.println("\n");
                     newRead.clear();
                 }
             }
 
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-
-
 }

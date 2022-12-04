@@ -41,11 +41,7 @@ public class ShuaiReply extends ShuaiTalk implements Serializable{
 
     @Override
     public String toString() {
-        return "ShuaiReply{" +
-                "responsiveRequest" + responsiveRequest +
-                ", replyStatus=" + replyStatus +
-                ", errorCode=" + errorCode +
-                ", shuaiObject=" + shuaiObject +
-                '}';
+        if(errorCode!=null) return errorCode.toString();
+        else return shuaiObject.toString();
     }
 }

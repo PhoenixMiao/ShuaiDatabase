@@ -67,7 +67,7 @@ public class ShuaiCommand {
             put("ZREVRANGEBYSCORE",new ShuaiCommand("ZREVRANGEBYSCORE",ShuaiZset.class.getMethod("zrevRangeByScore", String[].class, ShuaiDB.class),4,false,false,ShuaiObjectType.SHUAI_ZSET));
             put("ZREVRANK",new ShuaiCommand("ZREVRANK",ShuaiZset.class.getMethod("zrevRank", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_ZSET));
             put("ZSCORE",new ShuaiCommand("ZSCORE",ShuaiZset.class.getMethod("zscore", String[].class, ShuaiDB.class),3,false,false,ShuaiObjectType.SHUAI_ZSET));
-
+            put("SELECT",new ShuaiCommand("SELECT",ShuaiObject.class.getMethod("select",String[].class,ShuaiDB.class),2,true,false,null));
 
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
