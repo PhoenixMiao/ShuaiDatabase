@@ -1,1 +1,2 @@
 ZADD jbidddc 1 a 2 b
+DEL A

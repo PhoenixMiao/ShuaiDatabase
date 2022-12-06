@@ -2,7 +2,6 @@ package com.phoenix.shuaidatabase.single;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ShuaiRequest extends ShuaiTalk implements Serializable {
 
@@ -14,51 +13,56 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
 
     private boolean fake = false;
 
-    public ShuaiRequest(String input) {
+    public ShuaiRequest(String input,String[] bridge) {
         String[] tmpArgv = input.split(" ",2);
-        if(tmpArgv.length==0 || !COMMAND_PREFIXES.containsKey(tmpArgv[0])) {
-            ShuaiReply reply = new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND);
-//            reply.speakOut();
-            System.out.println(input);
-            throw new RuntimeException(String.valueOf(reply));
-        }
         this.argc = COMMAND_PREFIXES.get(tmpArgv[0]);
         this.argv = new String[this.argc];
         this.argv[0] = tmpArgv[0];
         tmpArgv[1] = tmpArgv[1].trim();
-        if(this.argc>1) {
+        if(this.argc>1) System.arraycopy(bridge, 0, this.argv, 1,this.argc - 1);
+    }
+
+    public static String[] isValid(String input) {
+        String[] tmpArgv = input.split(" ",2);
+        if(tmpArgv.length==0 || !ShuaiRequest.COMMAND_PREFIXES.containsKey(tmpArgv[0])) {
+            ShuaiReply reply = new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND);
+            throw new RuntimeException(String.valueOf(reply));
+        }
+        int argc = COMMAND_PREFIXES.get(tmpArgv[0]);
+        if(argc>1) {
             StringBuilder builder = new StringBuilder(tmpArgv[1]);
             boolean flag = false;
-            if(builder.toString().contains("\"")) {
+            if (builder.toString().contains("\"")) {
                 Deque<Integer> cnt = new ArrayDeque<>();
-                for(int i = 0;i<builder.toString().length();i++) {
-                    if(builder.toString().charAt(i) == '"' && ( i==0 || builder.toString().charAt(i-1) != '\\')) {
-                        if(!cnt.isEmpty()) {
+                for (int i = 0; i < builder.toString().length(); i++) {
+                    if (builder.toString().charAt(i) == '"' && (i == 0 || builder.toString().charAt(i - 1) != '\\')) {
+                        if (!cnt.isEmpty()) {
                             int top = cnt.pollLast();
-                            for(int j = top + 1;j<i;j++) {
-                                if(builder.toString().charAt(j)==' ') {
-                                    builder.replace(j,j+1,"\n");
+                            for (int j = top + 1; j < i; j++) {
+                                if (builder.toString().charAt(j) == ' ') {
+                                    builder.replace(j, j + 1, "\n");
                                     flag = true;
                                 }
                             }
-                        }else cnt.push(i);
+                        } else cnt.push(i);
                     }
                 }
             }
-            String[] bridge = builder.toString().split(" ",this.argc - 1);
-            if(bridge.length != this.argc-1) {
-                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.ARGUMENT_WRONG).speakOut();
+            String[] bridge = builder.toString().split(" ", argc - 1);
+            if (bridge.length != argc - 1) {
+                new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.ARGUMENT_WRONG).speakOut();
                 throw new RuntimeException();
             }
-            if(flag) for(int i = 0;i<bridge.length;i++) {
-                bridge[i] = bridge[i].trim().replace('\n',' ');
+            if (flag) for (int i = 0; i < bridge.length; i++) {
+                bridge[i] = bridge[i].trim().replace('\n', ' ');
             }
-            System.arraycopy(bridge, 0, this.argv, 1,this.argc - 1);
+            return bridge;
         }
+        return null;
     }
 
     public ShuaiRequest(String input,boolean fake){
-        this(input);
+        this(input,isValid(input));
         this.fake = fake;
     }
 
@@ -135,6 +139,8 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         put("ZREVRANK",3);
         put("ZSCORE",3);
         put("SELECT",2);
+        put("TTL",2);
+        put("PTTL",2);
     }};
 
     @Override
@@ -142,9 +148,5 @@ public class ShuaiRequest extends ShuaiTalk implements Serializable {
         StringBuilder res = new StringBuilder();
         for(String argument : argv) res.append(argument).append(" ");
         return res.toString().trim();
-    }
-
-    public static void main(String[] args) {
-        new ShuaiRequest("GET");
     }
 }
