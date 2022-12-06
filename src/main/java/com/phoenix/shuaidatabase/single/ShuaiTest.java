@@ -38,7 +38,7 @@ public class ShuaiTest {
             builder.append(arg).append(" ");
         }
         String input = builder.toString();
-        ShuaiRequest request = new ShuaiRequest(input);
+        ShuaiRequest request = new ShuaiRequest(input,ShuaiRequest.isValid(input));
 
         long startTime = System.currentTimeMillis();
 
@@ -179,7 +179,7 @@ public class ShuaiTest {
         for (int i = 0; i < threadNum; i++) {
             threadPoolExecutor.execute(new Thread(() -> {
                 try {
-                    ShuaiRequest request = new ShuaiRequest(input);
+                    ShuaiRequest request = new ShuaiRequest(input,ShuaiRequest.isValid(input));
                     startSignal.await();
                     new ShuaiTask(request).executeMethod(request);
                     doneSignal.countDown();

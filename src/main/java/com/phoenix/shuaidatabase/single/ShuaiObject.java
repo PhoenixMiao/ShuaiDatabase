@@ -1,6 +1,7 @@
 package com.phoenix.shuaidatabase.single;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -37,10 +38,12 @@ public class ShuaiObject implements Serializable, Delayed {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.EXPIRE_TIME_INPUT_FAULT);
         }
         ShuaiString object = new ShuaiString(argv[1]);
-        object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * ShuaiConstants.ONT_NANO);
+        long expireTime = System.nanoTime() + (long) Integer.parseInt(argv[2]) * ShuaiConstants.ONT_NANO;
+        object.setExpireTime(expireTime);
         db.getExpires().remove(new ShuaiExpireKey(object));
         db.getExpires().put(new ShuaiExpireKey(object));
-        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(argv[2]));
+        this.setExpireTime(expireTime);
+        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("1"));
     }
 
     public ShuaiReply pExpire(String[] argv, ShuaiDB db) {
@@ -51,17 +54,21 @@ public class ShuaiObject implements Serializable, Delayed {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.EXPIRE_TIME_INPUT_FAULT);
         }
         ShuaiString object = new ShuaiString(argv[1]);
-        object.setExpireTime(System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000);
+        long expireTime = System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000;
+        object.setExpireTime(expireTime);
         db.getExpires().put(new ShuaiExpireKey(object));
-        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(argv[2]));
+        this.setExpireTime(expireTime);
+        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("1"));
     }
 
-    public ShuaiReply expireAt(String[] argv, ShuaiDB db) {
-        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiObject());
+    public ShuaiReply ttl(String[] argv, ShuaiDB db) {
+        if(expireTime<=0 || System.nanoTime() > expireTime) return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("-1"));
+        else return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(String.valueOf(expireTime/ShuaiConstants.ONT_NANO)));
     }
 
-    public ShuaiReply pExpireAt(String[] argv, ShuaiDB db) {
-        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiObject());
+    public ShuaiReply pttl(String[] argv, ShuaiDB db) {
+        if(expireTime<=0 || System.nanoTime() > expireTime) return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("-1"));
+        else return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString(String.valueOf(expireTime/1000000)));
     }
 
     public static ShuaiReply select(String[] argv, ShuaiDB db) {

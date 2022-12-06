@@ -44,22 +44,17 @@ public class ShuaiTask implements Callable<String> {
             client.read(output);
             output.flip();
             ShuaiReply reply;
+            String message = "Command not found";
             try{
                 String input = StandardCharsets.UTF_8.decode(output).toString();
-//                System.out.println(input);
-                request = new ShuaiRequest(input);
+                request = new ShuaiRequest(input,ShuaiRequest.isValid(input));
                 assert key.isWritable();
-                output.clear();
                 reply = executeMethod(request);
                 reply.setResponsiveRequest(request);
-                output.put(reply.toString().getBytes(StandardCharsets.UTF_8));
-//                reply.speakOut();
-                output.flip();
-                client.write(output);
+                message = reply.toString();
+            }finally {
                 output.clear();
-                key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-            }catch (RuntimeException e) {
-                output.put(e.getMessage().getBytes(StandardCharsets.UTF_8));
+                output.put(message.getBytes(StandardCharsets.UTF_8));
                 output.flip();
                 client.write(output);
                 output.clear();
@@ -105,7 +100,7 @@ public class ShuaiTask implements Callable<String> {
                 command.increaseCalls();
                 if(ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isWillModify()){
                     //todo more precise!
-                    if(!shuaiRequest.getArgv()[0].equals("DEL")) db.getLru().put(new ShuaiString(shuaiRequest.getArgv()[1]),System.currentTimeMillis());
+                    if(!shuaiRequest.getArgv()[0].equals("DEL") && !shuaiRequest.getArgv()[0].endsWith("TTL")) db.getLru().put(new ShuaiString(shuaiRequest.getArgv()[1]),System.currentTimeMillis());
                     if(ShuaiServer.isRdb && !shuaiRequest.isFake() && ShuaiServer.eliminateStrategy!=ShuaiEliminateStrategy.LSM_TREE) executor.submit(new RdbProduce(false));
                     if(ShuaiServer.isAof && !shuaiRequest.isFake() && !shuaiRequest.getArgv()[0].endsWith("EXPIRE")) executor.submit(new AppendOnlyFile(shuaiRequest));
                 }

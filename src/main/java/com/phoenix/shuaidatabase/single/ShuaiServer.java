@@ -337,7 +337,7 @@ public class ShuaiServer {
                     ShuaiExpireKey key = null;
                     while (delayQueue.isEmpty() || (key = delayQueue.poll()) == null) db.getCondition().await();
                     db.getDict().remove(key.getKey());
-                    executor.submit(new ShuaiTask.AppendOnlyFile(new ShuaiRequest("DEL " + ((ShuaiString)key.getKey()).toString())));
+                    executor.submit(new ShuaiTask.AppendOnlyFile(new ShuaiRequest("DEL " + (key.getKey()).toString(),ShuaiRequest.isValid(key.getKey().toString()))));
                 } catch (Exception e) {
                     e.printStackTrace();
                     new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.EXPIRE_THREAD_INTERRUPTED).speakOut();
