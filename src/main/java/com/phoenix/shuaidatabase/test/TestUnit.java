@@ -1,4 +1,4 @@
-package com.phoenix.shuaidatabase.single;
+package com.phoenix.shuaidatabase.test;
 
 import groovy.json.internal.Byt;
 
