@@ -140,4 +140,10 @@ public class ShuaiCommand {
     public ShuaiObjectType getType() {
         return type;
     }
+
+    public static void main(String[] args) {
+        for(ShuaiCommand command : commands.values()) {
+            if(command.isWillModify()) System.out.println(command.name);
+        }
+    }
 }

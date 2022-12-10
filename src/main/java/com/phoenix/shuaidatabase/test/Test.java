@@ -1,4 +1,6 @@
-package com.phoenix.shuaidatabase.single;
+package com.phoenix.shuaidatabase.test;
+
+import com.phoenix.shuaidatabase.single.ShuaiDB;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
