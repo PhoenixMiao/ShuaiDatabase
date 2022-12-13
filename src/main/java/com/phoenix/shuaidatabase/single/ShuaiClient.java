@@ -52,6 +52,7 @@ public class ShuaiClient {
 //                    ShuaiReply reply = (ShuaiReply) ShuaiTalk.backToObject(newRead.array());
 //                    reply.speakOut();
                     out.write(newRead);
+                    System.out.println("");
                     newRead.clear();
                 }
             }

@@ -1,5 +1,7 @@
-package com.phoenix.shuaidatabase.single;
+package com.phoenix.shuaidatabase.test;
 
+import com.phoenix.shuaidatabase.single.ShuaiRequest;
+import com.phoenix.shuaidatabase.single.ShuaiTask;
 import redis.clients.jedis.Connection;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.util.SafeEncoder;
