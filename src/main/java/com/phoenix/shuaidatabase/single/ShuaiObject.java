@@ -23,7 +23,7 @@ public class ShuaiObject implements Serializable, Delayed {
     public static ShuaiReply delete(String[] argv, ShuaiDB db) {
         ShuaiString key = new ShuaiString(argv[1]);
         db.getDict().remove(key);
-        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiObject());
+        return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("OK"));
     }
 
     public void setExpireTime(long expireTime) {
