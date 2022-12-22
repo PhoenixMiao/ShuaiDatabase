@@ -1,6 +1,8 @@
 package com.phoenix.shuaidatabase.single;
 
-public enum ShuaiReplyStatus {
+import java.io.Serializable;
+
+public enum ShuaiReplyStatus implements Serializable {
 
     OK,
 

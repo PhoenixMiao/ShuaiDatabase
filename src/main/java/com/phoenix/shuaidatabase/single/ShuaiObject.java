@@ -39,9 +39,10 @@ public class ShuaiObject implements Serializable, Delayed {
         }
         ShuaiString object = new ShuaiString(argv[1]);
         long expireTime = System.nanoTime() + (long) Integer.parseInt(argv[2]) * ShuaiConstants.ONT_NANO;
-        object.setExpireTime(expireTime);
-        db.getExpires().remove(new ShuaiExpireKey(object));
-        db.getExpires().put(new ShuaiExpireKey(object));
+        ShuaiExpireKey expireKey = new ShuaiExpireKey(object);
+        expireKey.setExpireTime(expireTime);
+        db.getExpires().remove(expireKey);
+        db.getExpires().put(expireKey);
         this.setExpireTime(expireTime);
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("1"));
     }
@@ -55,9 +56,10 @@ public class ShuaiObject implements Serializable, Delayed {
         }
         ShuaiString object = new ShuaiString(argv[1]);
         long expireTime = System.nanoTime() + (long) Integer.parseInt(argv[2]) * 1000000;
-        object.setExpireTime(expireTime);
-        db.getExpires().put(new ShuaiExpireKey(object));
-        this.setExpireTime(expireTime);
+        ShuaiExpireKey expireKey = new ShuaiExpireKey(object);
+        expireKey.setExpireTime(expireTime);
+        db.getExpires().remove(expireKey);
+        db.getExpires().put(expireKey);
         return new ShuaiReply(ShuaiReplyStatus.OK,new ShuaiString("1"));
     }
 
@@ -101,5 +103,9 @@ public class ShuaiObject implements Serializable, Delayed {
         }
         long d = (getDelay(TimeUnit.NANOSECONDS) - other.getDelay(TimeUnit.NANOSECONDS));
         return (d==0) ? 0:((d<0) ? -1:1);
+    }
+
+    public long getExpireTime() {
+        return expireTime;
     }
 }

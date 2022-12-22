@@ -84,24 +84,9 @@ public class ShuaiServer {
     static volatile AtomicLong availableMemory = new AtomicLong(ShuaiConstants.MAX_MEMORY);
 
     public static void open() {
-        System.out.println("Listening for connections on port 8888");
         //for initialize
         ShuaiCommand shuaiCommand;
         ShuaiServer shuaiServer;
-
-        ServerSocketChannel serverSocketChannel;
-        Selector selector;
-        try{
-            serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.bind(new InetSocketAddress(DEFAULT_PORT));
-            serverSocketChannel.configureBlocking(false);
-            selector = Selector.open();
-            serverSocketChannel.register(selector,SelectionKey.OP_ACCEPT);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ;
-        }
-
 
         if(isRdb) ShuaiServer.loadRdbFile();
         if(isAof) ShuaiServer.loadAofFile();
@@ -121,7 +106,24 @@ public class ShuaiServer {
             new ShuaiReply(ShuaiReplyStatus.INNER_FAULT,ShuaiErrorCode.FAIL_FAST).speakOut();
         }
 
-        serverCronExecutor.scheduleAtFixedRate(new ServerCron(),1000,10000,TimeUnit.MILLISECONDS);
+        serverCronExecutor.scheduleAtFixedRate(new ServerCron(),1000,1000,TimeUnit.MILLISECONDS);
+    }
+
+    public static void polling() {
+        ServerSocketChannel serverSocketChannel;
+        Selector selector;
+        try{
+            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.bind(new InetSocketAddress(DEFAULT_PORT));
+            serverSocketChannel.configureBlocking(false);
+            selector = Selector.open();
+            serverSocketChannel.register(selector,SelectionKey.OP_ACCEPT);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ;
+        }
+
+        System.out.println("Listening for connections on port 8888");
 
         while(true) {
             try{
@@ -144,7 +146,7 @@ public class ShuaiServer {
                         System.out.println("Accepted connection from " + client);
                         client.configureBlocking(false);
                         SelectionKey key2 = client.register(selector,SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-                        ByteBuffer input = ByteBuffer.allocate(2000);
+                        ByteBuffer input = ByteBuffer.allocate(10240);
                         input.put(ShuaiConstants.WELCOME);
                         input.flip();
                         key2.attach(input);
@@ -169,6 +171,7 @@ public class ShuaiServer {
 
     public static void main(String[] args) {
         open();
+        polling();
     }
 
     public static void loadRdbFile() {
@@ -313,7 +316,7 @@ public class ShuaiServer {
                 }
 
                 //produce rdb file
-                if(isRdb) new ShuaiTask.RdbProduce(true).call();
+                if(isRdb) new ShuaiTask.RdbProduce(true,false).call();
             }catch (Exception e) {
                 e.printStackTrace();
             }
@@ -337,7 +340,8 @@ public class ShuaiServer {
                     ShuaiExpireKey key = null;
                     while (delayQueue.isEmpty() || (key = delayQueue.poll()) == null) db.getCondition().await();
                     db.getDict().remove(key.getKey());
-                    executor.submit(new ShuaiTask.AppendOnlyFile(new ShuaiRequest("DEL " + (key.getKey()).toString(),ShuaiRequest.isValid(key.getKey().toString()))));
+                    String input = "DEL " + (key.getKey()).toString();
+                    if(ShuaiServer.isAof) executor.submit(new ShuaiTask.AppendOnlyFile(new ShuaiRequest(input,ShuaiRequest.isValid(input))));
                 } catch (Exception e) {
                     e.printStackTrace();
                     new ShuaiReply(ShuaiReplyStatus.INNER_FAULT, ShuaiErrorCode.EXPIRE_THREAD_INTERRUPTED).speakOut();

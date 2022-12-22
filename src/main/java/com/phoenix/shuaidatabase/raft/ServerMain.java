@@ -4,21 +4,25 @@ import com.baidu.brpc.server.RpcServer;
 import com.phoenix.shuaidatabase.raft.proto.RaftProto;
 import com.phoenix.shuaidatabase.raft.service.RaftClientService;
 import com.phoenix.shuaidatabase.raft.service.RaftConsensusService;
+import com.phoenix.shuaidatabase.raft.service.ShuaiService;
 import com.phoenix.shuaidatabase.raft.service.impl.RaftClientServiceImpl;
 import com.phoenix.shuaidatabase.raft.service.impl.RaftConsensusServiceImpl;
+import com.phoenix.shuaidatabase.raft.service.impl.ShuaiServiceImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by wenweihu86 on 2017/5/9.
- */
+
 public class ServerMain {
     public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.printf("Usage: ./run_server.sh DATA_PATH CLUSTER CURRENT_NODE\n");
-            System.exit(-1);
-        }
+        String[][] clusters = new String[][] {
+                {"\\src\\main\\resources\\raft\\","127.0.0.1:8001:1,127.0.0.1:8002:2,127.0.0.1:8003:3","127.0.0.1:8001:1"},
+                {"\\src\\main\\resources\\raft\\","127.0.0.1:8001:1,127.0.0.1:8002:2,127.0.0.1:8003:3","127.0.0.1:8002:2"},
+                {"\\src\\main\\resources\\raft\\","127.0.0.1:8001:1,127.0.0.1:8002:2,127.0.0.1:8003:3","127.0.0.1:8003:3"}
+        };
+        if(args[0].equals("2")) args = clusters[1];
+        else if(args[0].equals("3")) args = clusters[2];
+        else args = clusters[0];
         // parse args
         // raft data dir
         String dataPath = args[0];
@@ -43,7 +47,7 @@ public class ServerMain {
         raftOptions.setSnapshotPeriodSeconds(30);
         raftOptions.setMaxSegmentFileSize(1024 * 1024);
         // 应用状态机
-        ShuaiStateMachine stateMachine = new ShuaiStateMachine(raftOptions.getDataDir());
+        ShuaiStateMachine stateMachine = new ShuaiStateMachine();
         // 初始化RaftNode
         RaftNode raftNode = new RaftNode(raftOptions, serverList, localServer, stateMachine);
         // 注册Raft节点之间相互调用的服务
@@ -53,7 +57,7 @@ public class ServerMain {
         RaftClientService raftClientService = new RaftClientServiceImpl(raftNode);
         server.registerService(raftClientService);
         // 注册应用自己提供的服务
-        ShuaiService exampleService = new ShuaiService(raftNode, stateMachine);
+        ShuaiService exampleService = new ShuaiServiceImpl(raftNode, stateMachine);
         server.registerService(exampleService);
         // 启动RPCServer，初始化Raft节点
         server.start();
