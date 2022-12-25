@@ -1,10 +1,11 @@
 package com.phoenix.shuaidatabase.single;
 
+import java.io.Serializable;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ShuaiSkipList {
+public class ShuaiSkipList implements Serializable {
 
     public static final int SHUAISKIPLIST_MAXLEVEL = 32;
 
@@ -16,13 +17,13 @@ public class ShuaiSkipList {
     private volatile int level;
     final transient ReentrantLock lock = new ReentrantLock();
 
-    static class Node {
+    static class Node implements Serializable{
         private volatile ShuaiString obj;
         private volatile Double score;
         private volatile Node backward;
         private volatile Level[] level;
 
-        static class Level {
+        static class Level implements Serializable{
             private volatile Node forward;
             private volatile int span;
 
@@ -52,7 +53,7 @@ public class ShuaiSkipList {
         return length;
     }
 
-    static class RangeSpec {
+    static class RangeSpec implements Serializable{
         private volatile double min;
         private volatile double max;
         private volatile boolean minex;

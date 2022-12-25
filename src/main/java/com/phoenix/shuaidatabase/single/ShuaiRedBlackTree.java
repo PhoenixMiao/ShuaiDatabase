@@ -1,6 +1,8 @@
 package com.phoenix.shuaidatabase.single;
 
-public class ShuaiRedBlackTree {
+import java.io.Serializable;
+
+public class ShuaiRedBlackTree implements Serializable {
     
     private Node root;
     private final Node nil;
@@ -13,7 +15,7 @@ public class ShuaiRedBlackTree {
         nil.p = root;
     }
 
-    static class Node {
+    static class Node implements Serializable {
         private ShuaiEntry entry;
         private Node p;
         private Node left;

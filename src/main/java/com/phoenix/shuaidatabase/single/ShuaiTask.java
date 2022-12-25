@@ -32,7 +32,7 @@ public class ShuaiTask implements Callable<String> {
         this.aofRequest = aofRequest;
     }
 
-    public ExecutorService executor = Executors.newFixedThreadPool(5);
+    public ExecutorService executor = Executors.newFixedThreadPool(1000);
 
     @Override
     public String call() throws Exception {
@@ -101,7 +101,7 @@ public class ShuaiTask implements Callable<String> {
                 if(ShuaiCommand.commands.get(shuaiRequest.getArgv()[0]).isWillModify()){
                     //todo more precise!
                     if(!shuaiRequest.getArgv()[0].equals("DEL") && !shuaiRequest.getArgv()[0].endsWith("TTL")) db.getLru().put(new ShuaiString(shuaiRequest.getArgv()[1]),System.currentTimeMillis());
-                    if(ShuaiServer.isRdb && !shuaiRequest.isFake() && ShuaiServer.eliminateStrategy!=ShuaiEliminateStrategy.LSM_TREE) executor.submit(new RdbProduce(false));
+                    if(ShuaiServer.isRdb && !shuaiRequest.isFake() && ShuaiServer.eliminateStrategy!=ShuaiEliminateStrategy.LSM_TREE) executor.submit(new RdbProduce(false,false));
                     if(ShuaiServer.isAof && !shuaiRequest.isFake() && !shuaiRequest.getArgv()[0].endsWith("EXPIRE")) executor.submit(new AppendOnlyFile(shuaiRequest));
                 }
             }
@@ -116,8 +116,11 @@ public class ShuaiTask implements Callable<String> {
 
         private final boolean serverCron;
 
-        public RdbProduce(boolean serverCron) {
+        private final boolean compulsive;
+
+        public RdbProduce(boolean serverCron,boolean compulsive) {
             this.serverCron = serverCron;
+            this.compulsive = compulsive;
         }
 
         public boolean isServerCron() {
@@ -131,31 +134,33 @@ public class ShuaiTask implements Callable<String> {
             ShuaiServer.lastSave.set(curTime);
             int result = 0;
             if(!ShuaiServer.rdbing.get()) {
-                ShuaiServer.r.lock();
-                try {
-                    for (List<Integer> param:ShuaiServer.saveParams) {
-                        if(curTime - lastSave > param.get(0) * 1000L) {
-                            ShuaiServer.w.lock();
-                            try{
-                                param.set(2,0);
-                            }finally {
-                                ShuaiServer.w.unlock();
-                            }
-                        }else {
-                            //other threads can reset, so it is roughly checking
-                            if(!serverCron) param.set(2,param.get(2) + 1);
-                            result = param.get(2);
-                            if((curTime - lastSave) <= param.get(0) * 1000L &&
-                                    param.get(2) + 1 >= param.get(1)) {
-                                boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
-                                if(!cas) return result;
-                                else break;
+                if(!compulsive) {
+                    ShuaiServer.r.lock();
+                    try {
+                        for (List<Integer> param:ShuaiServer.saveParams) {
+                            if(curTime - lastSave > param.get(0) * 1000L) {
+                                ShuaiServer.w.lock();
+                                try{
+                                    param.set(2,0);
+                                }finally {
+                                    ShuaiServer.w.unlock();
+                                }
+                            }else {
+                                //other threads can reset, so it is roughly checking
+                                if(!serverCron) param.set(2,param.get(2) + 1);
+                                result = param.get(2);
+                                if((curTime - lastSave) <= param.get(0) * 1000L &&
+                                        param.get(2) + 1 >= param.get(1)) {
+                                    boolean cas = ShuaiServer.rdbing.compareAndSet(false,true);
+                                    if(!cas) return result;
+                                    else break;
+                                }
                             }
                         }
+                        if(!ShuaiServer.rdbing.get()) return result;
+                    }finally {
+                        ShuaiServer.r.unlock();
                     }
-                    if(!ShuaiServer.rdbing.get()) return result;
-                }finally {
-                    ShuaiServer.r.unlock();
                 }
                 File rdbFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.RDB_SUFFIX);
                 ShuaiServer.wRdbFile.lock();

@@ -42,6 +42,12 @@ public class ShuaiClient {
                 buffer = ByteBuffer.allocate(2000);
                 String input = scanner.nextLine().trim();
                 if(input.equals("exit")) break;
+                try{
+                    ShuaiRequest.isValid(input);
+                }catch (Exception e) {
+                    new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT,ShuaiErrorCode.COMMAND_NOT_FOUND).speakOut();
+                    continue;
+                }
                 buffer.put(input.getBytes(StandardCharsets.UTF_8));
                 buffer.flip();
                 client.write(buffer);

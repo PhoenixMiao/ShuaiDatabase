@@ -8,15 +8,15 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
     static final long serialVersionUID = -5024744406711121676L;
 
-    private StringBuffer value;
+    private ShuaiBuffer value;
 
     public ShuaiString(String value) {
-        this.value = new StringBuffer(value);
+        this.value = new ShuaiBuffer(value);
         this.objectType = ShuaiObjectType.SHUAI_STRING;
     }
 
 
-    public StringBuffer getValue() {
+    public ShuaiBuffer getValue() {
         return value;
     }
 
@@ -29,6 +29,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         try {
             int begin = Integer.parseInt(argv[2]);
             int end = Integer.parseInt(argv[3]);
+            if(begin > end) throw new StringIndexOutOfBoundsException();
             if (begin < 0) begin += value.length();
             if (end < 0) end += value.length();
             String res;
@@ -49,8 +50,8 @@ public class ShuaiString extends ShuaiObject implements Serializable {
             String newValue = argv[3];
             ShuaiString oldValue = new ShuaiString("");
             if (db.getDict().containsKey(new ShuaiString(key))) oldValue = (ShuaiString) db.getDict().get(new ShuaiString(key));
-            oldValue.value.setLength(offset);
-            oldValue.value.append(newValue);
+            else db.getDict().put(new ShuaiString(key),oldValue);
+            oldValue.value.setRange(offset,newValue);
             ShuaiString res = new ShuaiString(oldValue.value.length() + "");
             return new ShuaiReply(ShuaiReplyStatus.OK, res);
         } catch (NumberFormatException e) {
@@ -61,9 +62,8 @@ public class ShuaiString extends ShuaiObject implements Serializable {
 
 
     public ShuaiReply append(String[] argv, ShuaiDB db) {
-        String newValue = value.append(argv[2]).toString();
-        db.getDict().put(this, new ShuaiString(newValue));
-        String res = newValue.length() + "";
+        value.append(argv[2]);
+        String res = value.length() + "";
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res));
     }
 
@@ -73,7 +73,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
             double incr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
             doubleValue += incr;
-            value = new StringBuffer(doubleValue + "");
+            value = new ShuaiBuffer(doubleValue + "");
         } catch (NumberFormatException e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
         }
@@ -86,7 +86,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
             double decr = Double.parseDouble(argv[2]);
             double doubleValue = Double.parseDouble(value.toString());
             doubleValue -= decr;
-            value = new StringBuffer(doubleValue + "");
+            value = new ShuaiBuffer(doubleValue + "");
         } catch (NumberFormatException e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
         }
@@ -99,7 +99,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
             long incr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
             longValue += incr;
-            value = new StringBuffer(longValue + "");
+            value = new ShuaiBuffer(longValue + "");
         } catch (NumberFormatException e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
         }
@@ -112,7 +112,7 @@ public class ShuaiString extends ShuaiObject implements Serializable {
             long decr = Long.parseLong(argv[2]);
             long longValue = Long.parseLong(value.toString());
             longValue -= decr;
-            value = new StringBuffer(longValue + "");
+            value = new ShuaiBuffer(longValue + "");
         } catch (NumberFormatException e) {
             return new ShuaiReply(ShuaiReplyStatus.INPUT_FAULT, ShuaiErrorCode.TYPE_FORMAT_FAULT);
         }
@@ -124,7 +124,6 @@ public class ShuaiString extends ShuaiObject implements Serializable {
         String res = value.length() + "";
         return new ShuaiReply(ShuaiReplyStatus.OK, new ShuaiString(res));
     }
-
 
     @Override
     public String toString() {
