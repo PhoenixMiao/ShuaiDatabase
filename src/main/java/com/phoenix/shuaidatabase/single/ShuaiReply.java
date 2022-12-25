@@ -31,7 +31,7 @@ public class ShuaiReply extends ShuaiTalk implements Serializable{
     }
 
     public void speakOut() {
-        if(errorCode!=null) System.out.println(errorCode);
+        if(errorCode!=null) System.out.println(errorCode.toString());
         else System.out.println(shuaiObject);
     }
 

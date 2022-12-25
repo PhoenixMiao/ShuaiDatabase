@@ -283,10 +283,10 @@ public class ShuaiServer {
         public void run() {
             try {
                 //eliminate
-                ShuaiServer.availableMemory.addAndGet(-(Runtime.getRuntime().totalMemory()) - Runtime.getRuntime().freeMemory());
+                ShuaiServer.availableMemory.set(Runtime.getRuntime().freeMemory());
                 long free = ShuaiServer.availableMemory.get();
                 for (ShuaiDB db : dbs) {
-                    if (free < 1024 * 1024) {
+                    if (free < 1024) {
                         reachLimitation = true;
                         switch (eliminateStrategy) {
                             case ALLKEYS_LRU:
