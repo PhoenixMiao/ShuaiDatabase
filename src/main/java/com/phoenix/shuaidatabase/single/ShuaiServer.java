@@ -23,7 +23,7 @@ public class ShuaiServer {
 
     public static ScheduledExecutorService serverCronExecutor = Executors.newScheduledThreadPool(1);
 
-    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.ALLKEYS_LRU;
+    public static ShuaiEliminateStrategy eliminateStrategy = ShuaiEliminateStrategy.LSM_TREE;
 
     public static ExecutorService aofRewriteExecutor = Executors.newFixedThreadPool(10);
 
@@ -37,9 +37,9 @@ public class ShuaiServer {
 
     public static ShuaiDB dbActive = dbs.getFirst();
 
-    public static Boolean isAof = false;
+    public static Boolean isAof = true;
     public static Boolean isRdb = false;
-    public static Boolean isLsm = false;
+    public static Boolean isLsm = true;
 
     public static AtomicLong lastSave = new AtomicLong(System.currentTimeMillis());
 
@@ -195,7 +195,11 @@ public class ShuaiServer {
     public static void loadAofFile() {
         File aofFile = new File(ShuaiConstants.PERSISTENCE_PATH + ShuaiConstants.AOF_SUFFIX);
         if(!aofFile.exists()) {
-            System.out.println("can not find");
+            try{
+                aofFile.createNewFile();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
             return ;
         }
         ShuaiServer.rAofFile.lock();
